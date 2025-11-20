@@ -10,7 +10,7 @@ export default function KrediHesaplama() {
   // --- State Tanımları ---
   const [amount, setAmount] = useState(500000); // Varsayılan Tutar
   const [term, setTerm] = useState(24); // Varsayılan Vade
-  const [frequency, setFrequency] = useState(1); // DEĞİŞTİRİLDİ: Varsayılan Ödeme Sıklığı (Aylık)
+  const [frequency, setFrequency] = useState(2); // DEĞİŞTİRİLDİ: Varsayılan Ödeme Sıklığı (3 Aylık)
   
   const [results, setResults] = useState({
     installment: 0,
