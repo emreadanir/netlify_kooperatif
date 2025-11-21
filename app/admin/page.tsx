@@ -10,7 +10,8 @@ import {
   UserCheck, 
   FileSearch, 
   Users, 
-  ChevronDown 
+  ChevronDown,
+  Info
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -26,6 +27,7 @@ export default async function AdminDashboard() {
   return (
     <div className="min-h-screen bg-[#0f172a] text-gray-100 font-sans flex">
       
+      {/* SOL MENÜ (SIDEBAR) */}
       <aside className="w-64 bg-slate-900 border-r border-slate-800 hidden md:flex flex-col fixed h-full">
         <div className="p-6 border-b border-slate-800">
           <h2 className="text-xl font-bold text-white tracking-wide">Yönetim Paneli</h2>
@@ -61,7 +63,6 @@ export default async function AdminDashboard() {
                  Denetim Kurulu
               </Link>
               
-              {/* ⭐️ Personel Kadrosu Linki Eklendi */}
               <Link href="/admin/kadrolar/personel-kadrosu" className="px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-lg flex items-center gap-2 transition-colors">
                  <Users size={16} />
                  Personel Kadrosu
@@ -74,21 +75,28 @@ export default async function AdminDashboard() {
             Ayarlar
           </div>
         </nav>
-
-        <div className="p-4 border-t border-slate-800 bg-slate-900">
-          <form action={logout}>
-            <button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/20 rounded-xl transition-all text-sm font-bold">
-              <LogOut size={18} />
-              Güvenli Çıkış
-            </button>
-          </form>
-        </div>
       </aside>
 
+      {/* SAĞ İÇERİK ALANI */}
       <div className="flex-1 flex flex-col md:ml-64">
+        
+        {/* HEADER */}
         <header className="h-16 bg-slate-900/50 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-6 md:px-8 sticky top-0 z-20">
            <h1 className="text-lg font-bold text-white md:hidden">Admin</h1>
+           
            <div className="flex items-center gap-4 ml-auto">
+              
+              {/* GÜVENLİ ÇIKIŞ BUTONU */}
+              <form action={logout}>
+                <button className="flex items-center justify-center gap-2 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/20 rounded-lg transition-all text-xs font-bold cursor-pointer">
+                  <LogOut size={16} />
+                  <span className="hidden sm:inline">Güvenli Çıkış</span>
+                </button>
+              </form>
+
+              {/* Ayırıcı Çizgi */}
+              <div className="h-6 w-px bg-slate-800 hidden sm:block"></div>
+
               <div className="text-right hidden sm:block">
                  <p className="text-sm font-bold text-white">Admin Kullanıcısı</p>
                  <p className="text-xs text-slate-400">Süper Yönetici</p>
@@ -107,15 +115,64 @@ export default async function AdminDashboard() {
            <div className="relative z-10 max-w-6xl mx-auto">
               <div className="mb-8">
                 <h2 className="text-3xl font-bold text-white mb-2">Hoş Geldiniz</h2>
-                <p className="text-slate-400">Burası yönetim panelinin başlangıç sayfasıdır. Sol menüden sitenin içeriğini yönetebilirsiniz.</p>
+                <p className="text-slate-400">Sol menüyü kullanarak web sitesinin içeriğini yönetebilirsiniz. İşte yapabilecekleriniz:</p>
               </div>
 
-              <div className="border-2 border-dashed border-slate-700/50 rounded-3xl h-96 flex flex-col items-center justify-center text-slate-500 bg-slate-800/20 hover:bg-slate-800/30 transition-colors">
-                 <div className="p-4 bg-slate-800 rounded-2xl mb-4 border border-slate-700">
-                    <LayoutDashboard size={48} className="text-indigo-400 opacity-80" />
-                 </div>
-                 <p className="text-lg font-medium text-slate-300">Panel Özeti</p>
-                 <p className="text-sm mt-2 text-slate-500">İleride buraya istatistikler eklenecektir.</p>
+              {/* ⭐️ GÜNCELLEME: Panel Özeti yerine Bilgilendirme Kartları */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* Tip 1: Duyurular */}
+                <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6 hover:bg-slate-800/60 transition-all duration-300 group">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="p-3 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20 group-hover:scale-110 transition-transform">
+                      <Megaphone size={24} />
+                    </div>
+                    <h3 className="text-lg font-bold text-white">Duyuru Yönetimi</h3>
+                  </div>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    Web sitesinde yayınlanacak duyuruları ekleyebilir, düzenleyebilir veya silebilirsiniz. Önemli duyuruları "Acil" olarak işaretleyerek anasayfada öne çıkarabilirsiniz.
+                  </p>
+                </div>
+
+                {/* Tip 2: Yönetim Kurulu */}
+                <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6 hover:bg-slate-800/60 transition-all duration-300 group">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl border border-indigo-500/20 group-hover:scale-110 transition-transform">
+                      <UserCheck size={24} />
+                    </div>
+                    <h3 className="text-lg font-bold text-white">Yönetim Kadrosu</h3>
+                  </div>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    Yönetim kurulu üyelerini ekleyebilir ve görevlerini güncelleyebilirsiniz. Listeyi sürükle-bırak yöntemiyle kolayca yeniden sıralayabilirsiniz.
+                  </p>
+                </div>
+
+                {/* Tip 3: Diğer Kadrolar */}
+                <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6 hover:bg-slate-800/60 transition-all duration-300 group">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="p-3 bg-cyan-500/10 text-cyan-400 rounded-xl border border-cyan-500/20 group-hover:scale-110 transition-transform">
+                      <Users size={24} />
+                    </div>
+                    <h3 className="text-lg font-bold text-white">Diğer Kadrolar</h3>
+                  </div>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    Denetim kurulu üyelerini ve idari personelleri yönetebilirsiniz. Personelleri "Muhasebe", "Memur" gibi kategorilere ayırarak düzenli bir görünüm sağlayabilirsiniz.
+                  </p>
+                </div>
+
+                {/* Tip 4: Genel Bilgi */}
+                <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6 hover:bg-slate-800/60 transition-all duration-300 group">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20 group-hover:scale-110 transition-transform">
+                      <Info size={24} />
+                    </div>
+                    <h3 className="text-lg font-bold text-white">Genel İşleyiş</h3>
+                  </div>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    Yaptığınız tüm değişiklikler anında web sitesine yansır. İçeriklerin sırasını değiştirmek için listelerdeki tutamaçları (grip icon) kullanabilirsiniz.
+                  </p>
+                </div>
+
               </div>
            </div>
         </main>
