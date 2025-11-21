@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 // 2. Metadata objesine tip ataması yapın
 export const metadata: Metadata = {
-  title: "S.S. Esnaf ve Sanatkarlar Kredi Kooperatifi",
+  title: "S. S. Nilüfer İlçesi Esnaf ve Sanatkarlar Kredi ve Kefalet Kooperatifi",
   description: "Esnaf ve sanatkarlarımızın finansal ihtiyaçlarına yönelik çözümler sunan kredi kooperatifi resmi web sitesi.",
 };
 

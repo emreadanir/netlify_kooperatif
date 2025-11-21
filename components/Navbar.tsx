@@ -87,7 +87,8 @@ const Navbar: React.FC<NavbarProps> = () => {
     >
       <div className={`absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent opacity-0 transition-opacity duration-500 ${scrolled ? 'opacity-100' : ''}`}></div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Ana kapsayıcı genişletildi: max-w-7xl -> max-w-screen-2xl ve padding artırıldı */}
+      <div className="max-w-screen-2xl mx-auto px-6 sm:px-8 lg:px-10"> 
         <div className="flex justify-between h-24 items-center">
           
           {/* --- LOGO ALANI --- */}
@@ -97,8 +98,10 @@ const Navbar: React.FC<NavbarProps> = () => {
               <Landmark className="h-7 w-7 text-amber-400 relative z-10 group-hover:text-white transition-colors" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-xl text-white leading-tight tracking-wide group-hover:text-amber-400 transition-colors">ESNAF KEFALET</span>
-              <span className="text-[10px] text-slate-400 font-bold tracking-[0.2em] uppercase group-hover:text-white transition-colors">KREDİ KOOPERATİFİ</span>
+              {/* Logo metni font boyutu küçültüldü */}
+              <span className="font-bold text-lg text-white leading-tight tracking-wide group-hover:text-amber-400 transition-colors">S. S. NİLÜFER İLÇESİ</span> 
+              {/* Değişiklik burada: KOOP. -> KOOPERATİFİ */}
+              <span className="text-[9px] text-slate-400 font-bold tracking-[0.2em] uppercase group-hover:text-white transition-colors">ESNAF VE SANATKARLAR KREDİ VE KEFALET KOOPERATİFİ</span>
             </div>
           </Link>
 

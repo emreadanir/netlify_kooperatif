@@ -62,8 +62,9 @@ const Footer: React.FC = () => {
                 <Landmark className="h-7 w-7 text-amber-400 relative z-10" />
               </div>
               <div className="flex flex-col">
-                <span className="font-bold text-xl text-white leading-tight tracking-wide">ESNAF KEFALET</span>
-                <span className="text-[10px] text-slate-400 font-bold tracking-[0.2em] uppercase">KREDİ KOOPERATİFİ</span>
+                <span className="font-bold text-xl text-white leading-tight tracking-wide">S. S. NİLÜFER İLÇESİ</span>
+                {/* Değişiklik burada: KOOP. -> KOOPERATİFİ */}
+                <span className="text-[10px] text-slate-400 font-bold tracking-[0.2em] uppercase">ESNAF VE SANATKARLAR KREDİ VE KEFALET KOOPERATİFİ</span>
               </div>
             </Link>
             
@@ -165,7 +166,7 @@ const Footer: React.FC = () => {
             <div className="absolute top-[-1px] left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-500/50 to-transparent"></div>
             
           <p className="text-slate-500 text-sm text-center md:text-left">
-            © 2024 <span className="text-slate-300 font-semibold">S.S. Esnaf ve Sanatkarlar Kredi ve Kefalet Kooperatifi</span>. Tüm hakları saklıdır.
+            © 2024 <span className="text-slate-300 font-semibold">S. S. Nilüfer İlçesi Esnaf ve Sanatkarlar Kredi ve Kefalet Kooperatifi</span>. Tüm hakları saklıdır.
           </p>
           
           <div className="flex gap-6 text-sm text-slate-500">
