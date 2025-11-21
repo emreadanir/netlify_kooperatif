@@ -34,7 +34,8 @@ export default function DenetimKuruluYonetimi() {
   
   // Form State'leri
   const [name, setName] = useState('');
-  const [title, setTitle] = useState('');
+  // ⭐️ DEĞİŞİKLİK: Varsayılan ünvan sabitlendi
+  const [title, setTitle] = useState('Denetim Kurulu Üyesi');
   const [image, setImage] = useState(''); 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -117,14 +118,14 @@ export default function DenetimKuruluYonetimi() {
   // Form İşlemleri
   const resetForm = () => {
     setName('');
-    setTitle('');
+    setTitle('Denetim Kurulu Üyesi'); // ⭐️ DEĞİŞİKLİK: Resetlerken de sabitle
     setImage('');
     setEditingId(null);
   };
 
   const handleEditClick = (item: AuditMember) => {
     setName(item.name);
-    setTitle(item.title);
+    setTitle('Denetim Kurulu Üyesi'); // ⭐️ DEĞİŞİKLİK: Düzenlerken de sabitle (Eskiden farklı olsa bile düzeltir)
     setImage(item.image);
     setEditingId(item.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -140,7 +141,7 @@ export default function DenetimKuruluYonetimi() {
       
       const docData = {
         name,
-        title,
+        title, // Sabit değer gidecek
         image: image || defaultImage,
         ...(editingId ? {} : { createdAt: serverTimestamp(), order: members.length + 1 })
       };
@@ -234,13 +235,12 @@ export default function DenetimKuruluYonetimi() {
                 <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Ünvan / Görev</label>
                 <div className="relative">
                     <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+                    {/* ⭐️ DEĞİŞİKLİK: Input readOnly yapıldı ve stil düzenlendi */}
                     <input 
                     type="text" 
                     value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="w-full bg-slate-900/50 border border-slate-600 rounded-lg pl-10 pr-3 py-2 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm"
-                    placeholder="Örn: Denetim Kurulu Üyesi"
-                    required
+                    readOnly
+                    className="w-full bg-slate-900/30 border border-slate-700 rounded-lg pl-10 pr-3 py-2 text-slate-400 focus:outline-none cursor-not-allowed text-sm font-medium"
                     />
                 </div>
               </div>

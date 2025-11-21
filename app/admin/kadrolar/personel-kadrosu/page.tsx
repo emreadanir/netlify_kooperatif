@@ -35,7 +35,7 @@ export default function PersonelKadrosuYonetimi() {
   
   // Form State'leri
   const [name, setName] = useState('');
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState('Memur');
   const [image, setImage] = useState(''); 
   const [category, setCategory] = useState<'manager' | 'accounting' | 'officer' | 'service'>('officer');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -115,10 +115,34 @@ export default function PersonelKadrosuYonetimi() {
     }
   };
 
+  // ⭐️ YENİ: Kategori değişince unvanı otomatik ayarla
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newCategory = e.target.value as any;
+    setCategory(newCategory);
+    
+    // Kategoriye göre varsayılan bir unvan seç
+    switch (newCategory) {
+        case 'manager':
+            setTitle('Kooperatif Müdürü');
+            break;
+        case 'accounting':
+            setTitle('Muhasebe Memuru'); // Muhasebe için varsayılan
+            break;
+        case 'officer':
+            setTitle('Memur');
+            break;
+        case 'service':
+            setTitle('Yardımcı Personel'); // Hizmet için varsayılan
+            break;
+        default:
+            setTitle('Memur');
+    }
+  };
+
   // Form İşlemleri
   const resetForm = () => {
     setName('');
-    setTitle('');
+    setTitle('Memur');
     setImage('');
     setCategory('officer');
     setEditingId(null);
@@ -251,33 +275,53 @@ export default function PersonelKadrosuYonetimi() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Ünvan / Görev</label>
-                <div className="relative">
-                    <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
-                    <input 
-                    type="text" 
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="w-full bg-slate-900/50 border border-slate-600 rounded-lg pl-10 pr-3 py-2 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm"
-                    placeholder="Örn: Muhasebe Şefi"
-                    required
-                    />
-                </div>
-              </div>
-
-              <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Kategori / Birim</label>
                 <div className="relative">
                     <Layers className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
                     <select 
                     value={category}
-                    onChange={(e) => setCategory(e.target.value as any)}
+                    onChange={handleCategoryChange}
                     className="w-full bg-slate-900/50 border border-slate-600 rounded-lg pl-10 pr-3 py-2 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm appearance-none"
                     >
                         <option value="manager">Kooperatif Müdürü</option>
                         <option value="accounting">Muhasebe Servisi</option>
                         <option value="officer">Memurlar</option>
                         <option value="service">Yardımcı Hizmetler</option>
+                    </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Ünvan / Görev</label>
+                <div className="relative">
+                    <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+                    <select 
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full bg-slate-900/50 border border-slate-600 rounded-lg pl-10 pr-3 py-2 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm appearance-none"
+                    >
+                        {/* ⭐️ DEĞİŞİKLİK: Kategoriye göre özel filtreleme */}
+                        {category === 'manager' && (
+                            <option value="Kooperatif Müdürü">Kooperatif Müdürü</option>
+                        )}
+                        
+                        {category === 'accounting' && (
+                            <>
+                                <option value="Muhasebe Şefi">Muhasebe Şefi</option>
+                                <option value="Muhasebe Memuru">Muhasebe Memuru</option>
+                            </>
+                        )}
+
+                        {category === 'officer' && (
+                            <option value="Memur">Memur</option>
+                        )}
+
+                        {category === 'service' && (
+                            <>
+                                <option value="Yardımcı Personel">Yardımcı Personel</option>
+                                <option value="Şoför">Şoför</option>
+                            </>
+                        )}
                     </select>
                 </div>
               </div>
