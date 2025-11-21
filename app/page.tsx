@@ -152,7 +152,6 @@ const Home: React.FC = () => {
                                     
                                     <div className="mb-6">
                                         <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider border ${item.urgent ? 'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20'}`}>
-                                            {item.urgent && <Sparkles size={12} />}
                                             {item.category}
                                         </span>
                                     </div>
@@ -202,7 +201,7 @@ const Home: React.FC = () => {
         <section className="relative z-10 py-20">
            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center mb-16">
-                <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4">Hizmetlerimiz</h2>
+                <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4">Göz Atın</h2>
                 <div className="w-20 h-1 bg-gradient-to-r from-indigo-500 to-amber-500 mx-auto rounded-full"></div>
               </div>
               <div className="grid md:grid-cols-3 gap-8">
@@ -218,7 +217,7 @@ const Home: React.FC = () => {
                     <FileText className="w-12 h-12 text-indigo-400 mb-6"/>
                     <h3 className="text-2xl font-bold text-white mb-3">Kredi Koşulları</h3>
                     <p className="text-slate-400 mb-6 text-sm leading-relaxed">İşletme, yatırım ve taşıt kredisi seçeneklerimiz ve uygun faiz oranlarımız.</p>
-                    <Link href="/kredi-cesitleri" className="inline-flex items-center text-indigo-400 font-semibold hover:text-indigo-300 transition-colors group-hover:gap-2">Detaylar <ArrowRight size={16} className="ml-1"/></Link>
+                    <Link href="/kredi-kullanim-sartlari" className="inline-flex items-center text-indigo-400 font-semibold hover:text-indigo-300 transition-colors group-hover:gap-2">Detaylar <ArrowRight size={16} className="ml-1"/></Link>
                  </div>
                  <div className="group p-8 bg-slate-800/30 hover:bg-slate-800/50 border border-slate-700 hover:border-cyan-500/30 rounded-3xl transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/10 hover:-translate-y-1 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-[50px] -mr-16 -mt-16 transition-opacity group-hover:opacity-100 opacity-0"></div>

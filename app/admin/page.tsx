@@ -52,7 +52,8 @@ export default async function AdminDashboard() {
             Sayfalar
           </Link>
 
-          <details className="group/kadro select-none" open>
+          {/* ⭐️ GÜNCELLEME: open özelliği kaldırıldı, menü artık kapalı açılacak. */}
+          <details className="group/kadro select-none"> 
             <summary className="px-4 py-3 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl flex items-center gap-3 font-medium cursor-pointer transition-colors list-none">
               <Briefcase size={20} />
               <span>Kadrolar</span>
