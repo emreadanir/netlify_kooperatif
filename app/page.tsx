@@ -28,7 +28,8 @@ const Home: React.FC = () => {
         </div>
 
         {/* --- HERO SECTION (GİRİŞ) --- */}
-        <section className="relative z-10 pt-20 pb-24 lg:pt-32 lg:pb-32">
+        {/* DÜZELTME: pt-20 -> pt-28 ve lg:pt-32 -> lg:pt-40 olarak artırıldı */}
+        <section className="relative z-10 pt-28 pb-24 lg:pt-40 lg:pb-32">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-between gap-16">
             
             {/* Sol Taraf: Metin ve Butonlar */}

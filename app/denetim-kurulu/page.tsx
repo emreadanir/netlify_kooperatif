@@ -55,7 +55,7 @@ export default function DenetimKurulu() {
         </div>
 
         {/* --- BAŞLIK BÖLÜMÜ (Yönetim Kurulu ile Eşitlendi) --- */}
-        <div className="relative z-10 pt-16 pb-8 lg:pt-20 lg:pb-12 text-center">
+        <div className="relative z-10 pt-28 pb-12 lg:pt-40 lg:pb-16 text-center">
             <div className="container mx-auto px-4">
                 
                 {/* Üst Başlık (Tagline) */}

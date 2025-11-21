@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useCallback } from 'react'; // useCallback eklendi
+import React, { useCallback } from 'react';
 import Link from 'next/link';
-import { Phone, Mail, MapPin, Landmark, Facebook, Twitter, Instagram, ChevronRight, ArrowRight, LucideIcon } from 'lucide-react';
+// Landmark importu kaldırıldı ve Image için gerekli import olmadığı varsayıldı (Next.js kısıtlamaları nedeniyle img tag'i kullanıldı)
+import { Phone, Mail, MapPin, Facebook, Twitter, Instagram, ChevronRight, ArrowRight, LucideIcon } from 'lucide-react';
 
 // ⭐️ YENİ: Link öğeleri için Tip Tanımı
 interface LinkItem {
@@ -41,7 +42,7 @@ const Footer: React.FC = () => {
   const socialIcons: LucideIcon[] = [Facebook, Twitter, Instagram];
 
   return (
-    <footer className="relative bg-[#0f172a] pt-24 pb-10 overflow-hidden border-t border-slate-800">
+    <footer className="relative bg-[#0f172a] pt-16 pb-6 overflow-hidden border-t border-slate-800">
       
       {/* --- ARKA PLAN IŞIK EFEKTLERİ (Mesh Gradient) --- */}
       <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
@@ -51,20 +52,28 @@ const Footer: React.FC = () => {
         <div className="absolute bottom-[10%] right-[-5%] w-[700px] h-[700px] bg-indigo-900/20 rounded-full blur-[100px] mix-blend-screen"></div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+      {/* DÜZELTME: max-w-7xl -> max-w-screen-2xl olarak değiştirildi */}
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           
           {/* 1. SÜTUN: KURUMSAL KİMLİK */}
           <div className="space-y-6">
             <Link href="/" className="flex items-center cursor-pointer group w-fit" onClick={scrollToTop}>
-              <div className="relative p-2 rounded-xl mr-3 overflow-hidden group-hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-shadow duration-300 bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700">
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-indigo-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <Landmark className="h-7 w-7 text-amber-400 relative z-10" />
+              {/* Logo Alanı: w-20 h-20 -> w-24 h-24 olarak büyütüldü */}
+              <div className="relative w-24 h-24 mr-4 overflow-hidden flex items-center justify-center">
+                {/* Arka plan parlama efekti kaldırıldı */}
+                <img 
+                  src="/kooperatif_logo.webp" 
+                  alt="S.S. Nilüfer İlçesi Esnaf ve Sanatkarlar Kredi ve Kefalet Kooperatifi Logosu" 
+                  // İçerideki görselin boyutları korundu
+                  className="w-full h-full relative z-10 object-contain" 
+                />
               </div>
               <div className="flex flex-col">
-                <span className="font-bold text-xl text-white leading-tight tracking-wide">S. S. NİLÜFER İLÇESİ</span>
-                {/* Değişiklik burada: KOOP. -> KOOPERATİFİ */}
-                <span className="text-[10px] text-slate-400 font-bold tracking-[0.2em] uppercase">ESNAF VE SANATKARLAR KREDİ VE KEFALET KOOPERATİFİ</span>
+                {/* Metin boyutu text-base -> text-sm olarak küçültüldü */}
+                <span className="font-bold text-sm text-white leading-tight tracking-wide">S. S. NİLÜFER İLÇESİ</span>
+                {/* Alt metin boyutu text-[10px] -> text-[9px] olarak küçültüldü */}
+                <span className="text-[9px] text-slate-400 font-bold tracking-[0.2em] uppercase">ESNAF VE SANATKARLAR KREDİ VE KEFALET KOOPERATİFİ</span>
               </div>
             </Link>
             

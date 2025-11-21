@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react'; // React, useState, useEffect ve useCallback import edildi
 import Link from 'next/link';
-import { Menu, X, CreditCard, Landmark, ChevronDown, Calculator, Search } from 'lucide-react';
+// Landmark kaldırıldı
+import { Menu, X, CreditCard, ChevronDown, Calculator, Search } from 'lucide-react';
 
 // ⭐️ YENİ: Alt Menü (SubItem) için Tip Tanımı
 interface SubMenuItem {
@@ -93,9 +94,16 @@ const Navbar: React.FC<NavbarProps> = () => {
           
           {/* --- LOGO ALANI --- */}
           <Link href="/" className="flex items-center cursor-pointer group relative z-50" onClick={closeMenu}>
+            {/* Logo Alanı: Landmark ikonu yerine kooperatif logosu eklendi */}
             <div className="relative p-2.5 rounded-xl mr-3 overflow-hidden group-hover:shadow-[0_0_25px_rgba(245,158,11,0.4)] transition-all duration-300 border border-white/10 bg-gradient-to-br from-slate-800 to-slate-900">
               <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-indigo-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <Landmark className="h-7 w-7 text-amber-400 relative z-10 group-hover:text-white transition-colors" />
+              {/* Logo resmi eklendi */}
+              <img 
+                src="/kooperatif_logo.webp" 
+                alt="S.S. Nilüfer İlçesi Esnaf ve Sanatkarlar Kredi ve Kefalet Kooperatifi Logosu" 
+                // Orijinal ikon boyutu h-7 w-7 idi. Görseli sığdırmak için p-0.5 kullanıldı.
+                className="h-7 w-7 relative z-10 object-contain p-0.5 rounded-lg" 
+              />
             </div>
             <div className="flex flex-col">
               {/* Logo metni font boyutu küçültüldü */}

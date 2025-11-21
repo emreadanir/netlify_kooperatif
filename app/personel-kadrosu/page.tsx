@@ -112,7 +112,7 @@ export default function PersonelKadrosu() {
         </div>
 
         {/* --- BAŞLIK BÖLÜMÜ --- */}
-        <div className="relative z-10 pt-16 pb-8 lg:pt-20 lg:pb-12 text-center">
+        <div className="relative z-10 pt-28 pb-12 lg:pt-40 lg:pb-16 text-center">
             <div className="container mx-auto px-4">
                 <div className="inline-flex items-center justify-center space-x-3 mb-4 opacity-90">
                     <div className="h-px w-8 bg-gradient-to-r from-transparent to-indigo-400"></div>

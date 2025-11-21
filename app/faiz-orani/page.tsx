@@ -29,7 +29,8 @@ const FaizOrani: React.FC = () => {
         </div>
 
         {/* --- BAŞLIK BÖLÜMÜ --- */}
-        <div className="relative z-10 pt-20 pb-12 lg:pt-24 lg:pb-16 text-center">
+        {/* DÜZELTME: pt-20 -> pt-28 ve lg:pt-24 -> lg:pt-40 olarak artırıldı */}
+        <div className="relative z-10 pt-28 pb-12 lg:pt-40 lg:pb-16 text-center">
             <div className="container mx-auto px-4">
                 <div className="inline-flex items-center justify-center space-x-3 mb-4 opacity-90">
                     <div className="h-px w-8 bg-gradient-to-r from-transparent to-emerald-400"></div>

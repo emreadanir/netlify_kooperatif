@@ -90,7 +90,8 @@ export default function KrediCesitleri() {
         </div>
 
         {/* --- BAŞLIK BÖLÜMÜ --- */}
-        <div className="relative z-10 pt-20 pb-12 lg:pt-24 lg:pb-16 text-center">
+        {/* DÜZELTME: pt-20 -> pt-28 ve lg:pt-24 -> lg:pt-40 olarak artırıldı */}
+        <div className="relative z-10 pt-28 pb-12 lg:pt-40 lg:pb-16 text-center">
             <div className="container mx-auto px-4">
                 
                 {/* Üst Başlık */}
