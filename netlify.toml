@@ -1,6 +1,7 @@
 [build]
-  # "--" işareti, sonraki argümanların npm yerine "build" script'ine iletilmesini sağlar.
-  command = "npm run build -- --no-lint"
+  # Sadece "npm run build" yeterlidir.
+  # package.json içindeki "build" scripti zaten gerekli parametreleri içeriyor.
+  command = "npm run build"
   publish = ".next"
 
 [[plugins]]
