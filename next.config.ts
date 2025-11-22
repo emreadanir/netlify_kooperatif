@@ -2,11 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  // Eslint ayarındaki tip hatasını önlemek için 'as any' kullanıyoruz.
-  // Bu sayede build sırasında lint hataları deployment'ı durdurmaz.
-  eslint: {
-    ignoreDuringBuilds: true,
-  } as any,
+  // NOT: 'eslint' ayarı kaldırıldı çünkü Next.js yeni sürümlerinde bu dosya üzerinden desteklenmiyor.
+  // Lint kontrolünü devre dışı bırakmak için package.json'daki build komutunu güncelledik.
+  
   typescript: {
     // Build sırasında TypeScript hatalarını görmezden gel (Hızlı deploy için)
     ignoreBuildErrors: true,
