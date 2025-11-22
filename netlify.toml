@@ -1,6 +1,6 @@
 [build]
-  # Sadece "npm run build" yeterlidir.
-  # package.json içindeki "build" scripti zaten gerekli parametreleri içeriyor.
+  # "npm run build" komutu package.json içindeki "build" scriptini çalıştırır.
+  # Ekstra parametreleri buradan değil, package.json'dan yönetmek daha güvenlidir.
   command = "npm run build"
   publish = ".next"
 
