@@ -1,10 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-// Import yolları düzeltildi
-import Navbar from '../../components/Navbar'; 
-import Footer from '../../components/Footer'; 
+import Navbar from '@/components/Navbar'; 
+import Footer from '@/components/Footer'; 
 import { Calculator, RefreshCcw, Wallet, PieChart, TrendingUp, Info, Table2, Briefcase, Building2, Truck, ChevronDown, ChevronUp, Share2, Printer } from 'lucide-react';
+
+// Firebase imports
+import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 // --- TİP TANIMLARI ---
 
@@ -256,10 +259,21 @@ const KrediHesaplama: React.FC = () => {
   
   const [results, setResults] = useState<CalculationResults | null>(null);
   const [showSchedule, setShowSchedule] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [user, setUser] = useState<any>(null);
 
   const maxAmount = creditType === 'business' ? BUSINESS_MAX_AMOUNT : BUILDING_MAX_AMOUNT;
   const maxTerm = creditType === 'business' ? BUSINESS_MAX_TERM : creditType === 'vehicle' ? VEHICLE_MAX_TERM : BUILDING_MAX_TERM;
   const rangeStep = creditType === 'business' ? 5000 : 25000; 
+
+  // Firebase Auth (Anonim Giriş) - Veri çekmek yerine sadece oturum açıyoruz
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (u) setUser(u);
+      else signInAnonymously(auth).catch((err) => console.error("Auth Error:", err));
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     let validAmount = amount;
@@ -399,7 +413,7 @@ const KrediHesaplama: React.FC = () => {
         try {
             await navigator.share(shareData);
         } catch (err) {
-            console.log('Paylaşım iptal edildi');
+            console.log('Paylaşım iptal edildi', err);
         }
     } else {
         try {
@@ -407,6 +421,7 @@ const KrediHesaplama: React.FC = () => {
             alert('Sayfa bağlantısı panoya kopyalandı.');
         } catch (err) {
             alert('Paylaşım desteklenmiyor.');
+            console.error(err);
         }
     }
   };
