@@ -2,7 +2,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Metadata } from 'next';
 import React from "react";
-import FaviconUpdater from "@/components/FaviconUpdater"; // ⭐️ YENİ
+import FaviconUpdater from "@/components/FaviconUpdater";
+import ThemeUpdater from "@/components/ThemeUpdater"; // ⭐️ YENİ
 
 // Font tanımlamaları
 const geistSans = Geist({
@@ -35,8 +36,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* ⭐️ Favicon Güncelleyiciyi Buraya Ekliyoruz */}
+        {/* ⭐️ Temaları ve Favicon'u yöneten bileşenler */}
         <FaviconUpdater />
+        <ThemeUpdater />
         
         {children}
       </body>

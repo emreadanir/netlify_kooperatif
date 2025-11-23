@@ -18,7 +18,8 @@ import {
   Globe,
   Calculator,
   Database,
-  ArrowRight
+  ArrowRight,
+  Palette // Renk teması ikonu
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -74,7 +75,6 @@ const dashboardItems = [
     borderColor: "border-purple-500/20",
     hoverBorder: "group-hover:border-purple-500/50"
   },
-  // ⭐️ GÜNCELLEME: Denetim ve Personel ayrıldı
   {
     title: "Denetim Kurulu",
     description: "Kooperatif denetim kurulu üyelerini ekleyin, bilgilerini düzenleyin ve sıralamasını değiştirin.",
@@ -97,13 +97,23 @@ const dashboardItems = [
   },
   {
     title: "Site Görünümü & Ayarlar",
-    description: "Logo, site başlığı, menü yapısı, footer bilgileri ve sosyal medya linklerini özelleştirin.",
+    description: "Logo, site başlığı, menü yapısı, footer bilgileri ve sosyal medya linklerini özelleştirebilirsiniz.",
     icon: Settings,
     href: "/admin/ayarlar/site-gorunumu",
     color: "text-pink-400",
     bgColor: "bg-pink-500/10",
     borderColor: "border-pink-500/20",
     hoverBorder: "group-hover:border-pink-500/50"
+  },
+  {
+    title: "Renk Teması",
+    description: "Sitenin ana rengini, arka planını ve vurgu renklerini değiştirerek görünümü kişiselleştirin.",
+    icon: Palette,
+    href: "/admin/ayarlar/renkler",
+    color: "text-fuchsia-400",
+    bgColor: "bg-fuchsia-500/10",
+    borderColor: "border-fuchsia-500/20",
+    hoverBorder: "group-hover:border-fuchsia-500/50"
   }
 ];
 
@@ -235,14 +245,34 @@ export default function DashboardClient() {
             </div>
           </details>
 
-          <Link 
-            href="/admin/ayarlar/site-gorunumu"
-            onClick={() => setIsSidebarOpen(false)} 
-            className="px-4 py-3 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl flex items-center gap-3 font-medium cursor-pointer transition-colors"
-          >
-            <Settings size={20} />
-            Ayarlar / Görünüm
-          </Link>
+          {/* AYARLAR MENÜSÜ */}
+          <details className="group/settings select-none" open> 
+            <summary className="px-4 py-3 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl flex items-center gap-3 font-medium cursor-pointer transition-colors list-none">
+              <Settings size={20} />
+              <span>Ayarlar</span>
+              <ChevronDown size={16} className="ml-auto transition-transform duration-200 group-open/settings:rotate-180 opacity-50" />
+            </summary>
+            
+            <div className="pl-4 mt-1 space-y-1 border-l border-slate-800 ml-6">
+                <Link 
+                    href="/admin/ayarlar/site-gorunumu"
+                    onClick={() => setIsSidebarOpen(false)} 
+                    className="px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-lg flex items-center gap-2 transition-colors"
+                >
+                    <Settings size={16} />
+                    Genel Görünüm
+                </Link>
+                <Link 
+                    href="/admin/ayarlar/renkler"
+                    onClick={() => setIsSidebarOpen(false)} 
+                    className="px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-lg flex items-center gap-2 transition-colors"
+                >
+                    <Palette size={16} />
+                    Renk Teması
+                </Link>
+            </div>
+          </details>
+
         </nav>
       </aside>
 
@@ -286,7 +316,7 @@ export default function DashboardClient() {
                 <p className="text-slate-400 text-sm md:text-base">Sol menüyü kullanarak web sitesinin içeriğini yönetebilirsiniz. İşte yapabilecekleriniz:</p>
               </div>
 
-              {/* ⭐️ GÜNCELLEME: KARTLAR GRID YAPISI */}
+              {/* KARTLAR GRID YAPISI */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {dashboardItems.map((item, index) => (
                   <Link 

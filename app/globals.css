@@ -1,22 +1,26 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Varsayılan Renkler (ThemeUpdater bunları ezecek) */
+  --background: #0f172a; /* Slate 900 */
+  --foreground: #f1f5f9; /* Slate 100 */
+  --primary: #4f46e5;    /* Indigo 600 */
+  --secondary: #d97706;  /* Amber 600 */
+  --accent: #06b6d4;     /* Cyan 500 */
 }
 
 @theme inline {
+  /* CSS değişkenlerini Tailwind renklerine bağlıyoruz */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+
+  /* Font tanımları */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
