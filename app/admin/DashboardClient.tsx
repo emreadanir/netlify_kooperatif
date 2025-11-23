@@ -246,7 +246,8 @@ export default function DashboardClient() {
           </details>
 
           {/* AYARLAR MENÜSÜ */}
-          <details className="group/settings select-none" open> 
+          {/* ⭐️ DEĞİŞİKLİK: 'open' özelliği kaldırıldı, varsayılan olarak kapalı */}
+          <details className="group/settings select-none"> 
             <summary className="px-4 py-3 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl flex items-center gap-3 font-medium cursor-pointer transition-colors list-none">
               <Settings size={20} />
               <span>Ayarlar</span>
@@ -260,7 +261,7 @@ export default function DashboardClient() {
                     className="px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-lg flex items-center gap-2 transition-colors"
                 >
                     <Settings size={16} />
-                    Genel Görünüm
+                    Üst & Alt Bilgi
                 </Link>
                 <Link 
                     href="/admin/ayarlar/renkler"

@@ -1,18 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-// ⭐️ DÜZELTME: Import yolları güncellendi
 import Navbar from '@/components/Navbar'; 
 import Footer from '@/components/Footer'; 
 import { CheckCircle2, FileText, ShieldCheck, UserCheck, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
-// Firebase imports
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db, appId } from '@/lib/firebase';
 
-// Tip Tanımları
 interface TeminatMadde {
     title: string;
     desc: string;
@@ -28,34 +25,14 @@ interface PageData {
     financialDocs: string[];
 }
 
-// Varsayılan Veriler
 const defaultData: PageData = {
-    conditions: [
-        "Esnaf ve Sanatkarlar Odası'na kayıtlı olmak",
-        "Vergi levhasına sahip aktif esnaf olmak",
-        "Kooperatifimiz çalışma bölgesinde bulunmak",
-        "Aynı anda başka bir Esnaf Kefalet Kooperatifi ortağı olmamak",
-        "Kredi notunun banka kriterlerine uygun olması"
-    ],
+    conditions: [],
     conditionsActive: true,
-    collaterals: [
-        { title: "Şahıs Kefaleti", desc: "Kredi limitine göre en az 2 esnaf kefil" },
-        { title: "Gayrimenkul İpoteği", desc: "Daire, dükkan, arsa vb. taşınmazların ipoteği" },
-        { title: "Araç Rehni", desc: "Ticari veya binek araç üzerine rehin" }
-    ],
+    collaterals: [],
     collateralsActive: true,
-    commonDocs: [
-        "Nüfus Cüzdanı Fotokopisi",
-        "Vergi Levhası Fotokopisi",
-        "Oda Faaliyet Belgesi",
-        "İkametgah Belgesi"
-    ],
+    commonDocs: [],
     documentsActive: true,
-    financialDocs: [
-        "Son 3 yıla ait Bilanço ve Gelir Tablosu",
-        "Son dönem Geçici Vergi Beyannamesi",
-        "Ticaret Sicil Gazetesi"
-    ]
+    financialDocs: []
 };
 
 export default function KrediKullanimSartlari() {
@@ -63,7 +40,11 @@ export default function KrediKullanimSartlari() {
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
 
-    // 1. Anonim Giriş
+    // ⭐️ YENİ: Sayfa Başlığını Ayarla
+    useEffect(() => {
+        document.title = "Kredi Kullanım Şartları | ESKKK";
+    }, []);
+
     useEffect(() => {
         const unsub = onAuthStateChanged(auth, (u) => {
             if (u) setUser(u);
@@ -72,7 +53,6 @@ export default function KrediKullanimSartlari() {
         return () => unsub();
     }, []);
 
-    // 2. Veri Çekme
     useEffect(() => {
         if (!user) return;
 
@@ -98,38 +78,36 @@ export default function KrediKullanimSartlari() {
     }, [user]);
 
     return (
-        <div className="min-h-screen bg-[#0f172a] font-sans text-gray-100 flex flex-col">
+        <div className="min-h-screen bg-background font-sans text-foreground flex flex-col transition-colors duration-500">
             <Navbar />
             
-            {/* Ana Kapsayıcı */}
             <main className="flex-grow relative overflow-hidden">
                 
                 {/* Arka Plan Efektleri */}
                 <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
-                    <div className="absolute top-[-10%] right-[-5%] w-[700px] h-[700px] bg-emerald-600/10 rounded-full blur-[120px] mix-blend-screen"></div>
-                    <div className="absolute top-[5%] left-[-10%] w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[100px] mix-blend-screen"></div>
-                    <div className="absolute top-[40%] left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-indigo-600/10 blur-[90px] rounded-full mix-blend-screen"></div>
-                    <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-emerald-800/15 rounded-full blur-[150px] mix-blend-screen"></div>
+                    <div className="absolute top-[-10%] right-[-5%] w-[700px] h-[700px] bg-accent/10 rounded-full blur-[120px] mix-blend-screen"></div>
+                    <div className="absolute top-[5%] left-[-10%] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[100px] mix-blend-screen"></div>
+                    <div className="absolute top-[40%] left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-secondary/10 blur-[90px] rounded-full mix-blend-screen"></div>
+                    <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-accent/15 rounded-full blur-[150px] mix-blend-screen"></div>
                 </div>
 
-                {/* Başlık Bölümü */}
                 <div className="relative z-10 pt-28 pb-12 lg:pt-40 lg:pb-16 text-center">
                     <div className="container mx-auto px-4">
                         <div className="inline-flex items-center justify-center space-x-3 mb-4 opacity-90">
-                            <div className="h-px w-8 bg-gradient-to-r from-transparent to-emerald-400"></div>
-                            <span className="text-emerald-400 font-bold tracking-[0.25em] uppercase text-xs md:text-sm">BAŞVURU REHBERİ</span>
-                            <div className="h-px w-8 bg-gradient-to-l from-transparent to-emerald-400"></div>
+                            <div className="h-px w-8 bg-gradient-to-r from-transparent to-accent"></div>
+                            <span className="text-accent font-bold tracking-[0.25em] uppercase text-xs md:text-sm">BAŞVURU REHBERİ</span>
+                            <div className="h-px w-8 bg-gradient-to-l from-transparent to-accent"></div>
                         </div>
                         
-                        <h1 className="text-4xl md:text-6xl font-extrabold text-white tracking-tight mb-6 leading-tight drop-shadow-2xl">
-                        Kredi Kullanım <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-blue-400 to-indigo-400">Şartları</span>
+                        <h1 className="text-4xl md:text-6xl font-extrabold text-foreground tracking-tight mb-6 leading-tight drop-shadow-2xl">
+                        Kredi Kullanım <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-primary to-secondary">Şartları</span>
                         </h1>
                         
-                        <p className="text-slate-400 max-w-2xl mx-auto text-base md:text-lg font-light leading-relaxed">
+                        <p className="text-foreground/60 max-w-2xl mx-auto text-base md:text-lg font-light leading-relaxed">
                         Kooperatifimiz kefaletiyle kredi kullanabilmek için gerekli olan temel şartlar, istenen belgeler ve teminat koşulları.
                         </p>
                         
-                        <div className="mt-12 w-full max-w-xs mx-auto h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent"></div>
+                        <div className="mt-12 w-full max-w-xs mx-auto h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent"></div>
                     </div>
                 </div>
 
@@ -137,7 +115,7 @@ export default function KrediKullanimSartlari() {
                     
                     {loading ? (
                         <div className="flex justify-center py-20">
-                            <Loader2 className="w-12 h-12 text-emerald-500 animate-spin" />
+                            <Loader2 className="w-12 h-12 text-accent animate-spin" />
                         </div>
                     ) : (
                         <>
@@ -145,18 +123,17 @@ export default function KrediKullanimSartlari() {
                             {pageData.conditionsActive && (
                                 <div>
                                     <div className="flex items-center gap-3 mb-8">
-                                        <div className="p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-                                            <UserCheck className="w-6 h-6 text-emerald-400" />
+                                        <div className="p-2 bg-accent/10 rounded-lg border border-accent/20">
+                                            <UserCheck className="w-6 h-6 text-accent" />
                                         </div>
-                                        <h2 className="text-2xl font-bold text-white">Kimler Kredi Kullanabilir?</h2>
+                                        <h2 className="text-2xl font-bold text-foreground">Kimler Kredi Kullanabilir?</h2>
                                     </div>
 
-                                    {/* ⭐️ GÜNCELLEME: Grid yerine Flex kullanılarak ortalama sağlandı */}
                                     <div className="flex flex-wrap justify-center gap-6">
                                         {pageData.conditions.map((item, idx) => (
-                                            <div key={idx} className="w-full md:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)] group p-6 bg-slate-800/40 border border-slate-700/60 rounded-2xl hover:bg-slate-800/60 transition-all duration-300 hover:border-emerald-500/30 flex items-start gap-4">
-                                                <CheckCircle2 className="w-6 h-6 text-emerald-500 shrink-0 mt-0.5" />
-                                                <p className="text-slate-300 text-sm leading-relaxed group-hover:text-white transition-colors">{item}</p>
+                                            <div key={idx} className="w-full md:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)] group p-6 bg-foreground/5 border border-foreground/10 rounded-2xl hover:bg-foreground/10 transition-all duration-300 hover:border-accent/30 flex items-start gap-4">
+                                                <CheckCircle2 className="w-6 h-6 text-accent shrink-0 mt-0.5" />
+                                                <p className="text-foreground/80 text-sm leading-relaxed group-hover:text-foreground transition-colors">{item}</p>
                                             </div>
                                         ))}
                                     </div>
@@ -165,34 +142,34 @@ export default function KrediKullanimSartlari() {
 
                             {/* 2. BÖLÜM: TEMİNATLAR */}
                             {pageData.collateralsActive && (
-                                <div className="relative rounded-3xl overflow-hidden border border-indigo-500/20 bg-gradient-to-br from-slate-900/80 to-indigo-900/20 p-8 lg:p-12">
-                                    <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+                                <div className="relative rounded-3xl overflow-hidden border border-primary/20 bg-gradient-to-br from-background/80 to-primary/10 p-8 lg:p-12">
+                                    <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-[80px] pointer-events-none"></div>
                                     
                                     <div className="relative z-10 grid md:grid-cols-2 gap-12 items-center">
                                         <div>
                                             <div className="flex items-center gap-3 mb-6">
-                                                <div className="p-2 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
-                                                    <ShieldCheck className="w-6 h-6 text-indigo-400" />
+                                                <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
+                                                    <ShieldCheck className="w-6 h-6 text-primary" />
                                                 </div>
-                                                <h2 className="text-2xl font-bold text-white">Teminat Koşulları</h2>
+                                                <h2 className="text-2xl font-bold text-foreground">Teminat Koşulları</h2>
                                             </div>
-                                            <p className="text-slate-400 leading-relaxed mb-6">
+                                            <p className="text-foreground/60 leading-relaxed mb-6">
                                                 Kredi kullanımında kooperatifimizin ve bankanın riskini teminat altına almak amacıyla, kredi tutarına ve kişinin mali durumuna göre aşağıdaki teminatlar istenmektedir.
                                             </p>
-                                            <div className="flex items-start gap-3 p-4 bg-indigo-500/10 rounded-xl border border-indigo-500/20">
-                                                <AlertCircle className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
-                                                <p className="text-indigo-200 text-sm">
+                                            <div className="flex items-start gap-3 p-4 bg-primary/10 rounded-xl border border-primary/20">
+                                                <AlertCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                                                <p className="text-primary/80 text-sm">
                                                     Teminat türü ve miktarı, talep edilen kredi limitine göre Yönetim Kurulu tarafından belirlenir.
                                                 </p>
                                             </div>
                                         </div>
                                         <div className="space-y-4">
                                             {pageData.collaterals.map((item, idx) => (
-                                                <div key={idx} className="flex items-center gap-4 p-4 bg-slate-800/50 rounded-xl border border-slate-700/50 hover:border-indigo-400/30 transition-colors">
-                                                    <div className="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></div>
+                                                <div key={idx} className="flex items-center gap-4 p-4 bg-background/50 rounded-xl border border-foreground/10 hover:border-primary/30 transition-colors">
+                                                    <div className="w-2 h-2 rounded-full bg-primary shrink-0"></div>
                                                     <div>
-                                                        <h4 className="text-white font-bold text-sm">{item.title}</h4>
-                                                        <p className="text-slate-400 text-xs mt-0.5">{item.desc}</p>
+                                                        <h4 className="text-foreground font-bold text-sm">{item.title}</h4>
+                                                        <p className="text-foreground/60 text-xs mt-0.5">{item.desc}</p>
                                                     </div>
                                                 </div>
                                             ))}
@@ -205,31 +182,31 @@ export default function KrediKullanimSartlari() {
                             {pageData.documentsActive && (
                                 <div>
                                     <div className="flex items-center gap-3 mb-8">
-                                        <div className="p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                                            <FileText className="w-6 h-6 text-blue-400" />
+                                        <div className="p-2 bg-secondary/10 rounded-lg border border-secondary/20">
+                                            <FileText className="w-6 h-6 text-secondary" />
                                         </div>
-                                        <h2 className="text-2xl font-bold text-white">Başvuru İçin Gerekli Belgeler</h2>
+                                        <h2 className="text-2xl font-bold text-foreground">Başvuru İçin Gerekli Belgeler</h2>
                                     </div>
 
                                     <div className="grid md:grid-cols-2 gap-8">
-                                        <div className="bg-slate-800/30 border border-slate-700/60 rounded-2xl p-6">
-                                            <h3 className="text-lg font-bold text-blue-400 mb-4 pb-2 border-b border-slate-700">Ortak Belgeler</h3>
+                                        <div className="bg-foreground/5 border border-foreground/10 rounded-2xl p-6">
+                                            <h3 className="text-lg font-bold text-secondary mb-4 pb-2 border-b border-foreground/10">Ortak Belgeler</h3>
                                             <ul className="space-y-3">
                                                 {pageData.commonDocs.map((doc, i) => (
-                                                    <li key={i} className="flex items-start gap-3 text-sm text-slate-300">
-                                                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 shrink-0"></div>
+                                                    <li key={i} className="flex items-start gap-3 text-sm text-foreground/80">
+                                                        <div className="w-1.5 h-1.5 bg-secondary rounded-full mt-2 shrink-0"></div>
                                                         {doc}
                                                     </li>
                                                 ))}
                                             </ul>
                                         </div>
 
-                                        <div className="bg-slate-800/30 border border-slate-700/60 rounded-2xl p-6">
-                                            <h3 className="text-lg font-bold text-blue-400 mb-4 pb-2 border-b border-slate-700">Mali Belgeler</h3>
+                                        <div className="bg-foreground/5 border border-foreground/10 rounded-2xl p-6">
+                                            <h3 className="text-lg font-bold text-secondary mb-4 pb-2 border-b border-foreground/10">Mali Belgeler</h3>
                                             <ul className="space-y-3">
                                                 {pageData.financialDocs.map((doc, i) => (
-                                                    <li key={i} className="flex items-start gap-3 text-sm text-slate-300">
-                                                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 shrink-0"></div>
+                                                    <li key={i} className="flex items-start gap-3 text-sm text-foreground/80">
+                                                        <div className="w-1.5 h-1.5 bg-secondary rounded-full mt-2 shrink-0"></div>
                                                         {doc}
                                                     </li>
                                                 ))}
@@ -241,13 +218,12 @@ export default function KrediKullanimSartlari() {
                         </>
                     )}
 
-                    {/* Alt Çağrı */}
                     <div className="mt-16 text-center">
-                        <p className="text-slate-400 mb-6">
+                        <p className="text-foreground/60 mb-6">
                             Şartları sağlıyor musunuz? Hemen ön başvurunuzu yapın, size dönüş yapalım.
                         </p>
                         <Link href="/iletisim">
-                            <button className="px-10 py-4 bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-500 hover:to-blue-500 text-white font-bold text-lg rounded-xl shadow-lg shadow-blue-900/30 transition-all transform hover:scale-105 flex items-center justify-center gap-2 mx-auto">
+                            <button className="px-10 py-4 bg-gradient-to-r from-accent to-primary hover:from-accent/90 hover:to-primary/90 text-white font-bold text-lg rounded-xl shadow-lg shadow-primary/30 transition-all transform hover:scale-105 flex items-center justify-center gap-2 mx-auto">
                                 Bize Ulaşın
                                 <ArrowRight size={20} />
                             </button>

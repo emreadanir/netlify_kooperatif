@@ -172,21 +172,43 @@ export default function RenkYonetimi() {
                         <p className="text-xs text-slate-500 mt-1">Özel ikonlar ve gradyan geçişleri için kullanılır.</p>
                     </div>
 
-                    <div className="pt-4 border-t border-slate-700/50">
-                        <label className="block text-sm font-medium text-slate-300 mb-2">Arka Plan Rengi</label>
-                        <div className="flex items-center gap-3 bg-slate-900/50 p-2 rounded-xl border border-slate-700">
-                            <input 
-                                type="color" 
-                                value={theme.background} 
-                                onChange={(e) => updateColor('background', e.target.value)}
-                                className="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0"
-                            />
-                            <input 
-                                type="text" 
-                                value={theme.background}
-                                onChange={(e) => updateColor('background', e.target.value)}
-                                className="bg-transparent text-white font-mono text-sm outline-none w-full uppercase"
-                            />
+                    <div className="pt-4 border-t border-slate-700/50 space-y-6">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-300 mb-2">Arka Plan Rengi</label>
+                            <div className="flex items-center gap-3 bg-slate-900/50 p-2 rounded-xl border border-slate-700">
+                                <input 
+                                    type="color" 
+                                    value={theme.background} 
+                                    onChange={(e) => updateColor('background', e.target.value)}
+                                    className="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0"
+                                />
+                                <input 
+                                    type="text" 
+                                    value={theme.background}
+                                    onChange={(e) => updateColor('background', e.target.value)}
+                                    className="bg-transparent text-white font-mono text-sm outline-none w-full uppercase"
+                                />
+                            </div>
+                        </div>
+
+                        {/* ⭐️ YENİ EKLENEN ALAN: Yazı Rengi */}
+                        <div>
+                            <label className="block text-sm font-medium text-slate-300 mb-2">Yazı Rengi (Metinler)</label>
+                            <div className="flex items-center gap-3 bg-slate-900/50 p-2 rounded-xl border border-slate-700">
+                                <input 
+                                    type="color" 
+                                    value={theme.foreground} 
+                                    onChange={(e) => updateColor('foreground', e.target.value)}
+                                    className="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0"
+                                />
+                                <input 
+                                    type="text" 
+                                    value={theme.foreground}
+                                    onChange={(e) => updateColor('foreground', e.target.value)}
+                                    className="bg-transparent text-white font-mono text-sm outline-none w-full uppercase"
+                                />
+                            </div>
+                            <p className="text-xs text-slate-500 mt-1">Okunabilirlik için arka plan ile zıt bir renk seçin.</p>
                         </div>
                     </div>
 
@@ -201,7 +223,7 @@ export default function RenkYonetimi() {
                         <div className="absolute top-0 left-0 w-1 h-full" style={{ backgroundColor: theme.primary }}></div>
                         <h4 className="text-xl font-bold mb-2" style={{ color: theme.foreground }}>Örnek Başlık</h4>
                         <p className="text-sm opacity-80 mb-4" style={{ color: theme.foreground }}>
-                            Bu alan seçtiğiniz renklerin sitede nasıl görüneceğini simüle eder.
+                            Bu alan seçtiğiniz renklerin sitede nasıl görüneceğini simüle eder. Metin rengini değiştirdiğinizde burası da güncellenecektir.
                         </p>
                         <div className="flex gap-3">
                             <button className="px-4 py-2 rounded-lg text-sm font-bold text-white" style={{ backgroundColor: theme.primary }}>
