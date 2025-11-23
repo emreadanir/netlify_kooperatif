@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar'; 
 import Footer from '@/components/Footer'; 
-import { Calculator, RefreshCcw, Wallet, PieChart, TrendingUp, Info, Table2, Briefcase, Building2, Truck, ChevronDown, ChevronUp, Share2, Printer } from 'lucide-react';
+import { Calculator, RefreshCcw, Wallet, PieChart, TrendingUp, Info, Table2, Briefcase, Building2, Truck, ChevronDown, ChevronUp, Share2, Printer, Loader2 } from 'lucide-react';
 
 // Firebase imports
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
@@ -256,6 +256,7 @@ const KrediHesaplama: React.FC = () => {
   const [frequency, setFrequency] = useState<number>(1);
   const [creditType, setCreditType] = useState<CreditType>('business'); 
   const [loanDate, setLoanDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [isPdfGenerating, setIsPdfGenerating] = useState(false);
   
   const [results, setResults] = useState<CalculationResults | null>(null);
   const [showSchedule, setShowSchedule] = useState(false);
@@ -266,7 +267,7 @@ const KrediHesaplama: React.FC = () => {
   const maxTerm = creditType === 'business' ? BUSINESS_MAX_TERM : creditType === 'vehicle' ? VEHICLE_MAX_TERM : BUILDING_MAX_TERM;
   const rangeStep = creditType === 'business' ? 5000 : 25000; 
 
-  // Firebase Auth (Anonim Giriş) - Veri çekmek yerine sadece oturum açıyoruz
+  // Firebase Auth
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       if (u) setUser(u);
@@ -316,81 +317,561 @@ const KrediHesaplama: React.FC = () => {
     return `${years} Yıl (${term} Ay)`;
   };
 
-  // --- BUTON İŞLEVLERİ ---
+  // --- PDF İÇİN YARDIMCI FONKSİYONLAR ---
+
+  const formatMoneyForPDF = (val: number) => {
+    return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' TL';
+  };
+
+  const normalizeForPDF = (text: string) => {
+    return text
+      .replace(/Ğ/g, "G").replace(/ğ/g, "g")
+      .replace(/Ü/g, "U").replace(/ü/g, "u")
+      .replace(/Ş/g, "S").replace(/ş/g, "s")
+      .replace(/İ/g, "I").replace(/ı/g, "i")
+      .replace(/Ö/g, "O").replace(/ö/g, "o")
+      .replace(/Ç/g, "C").replace(/ç/g, "c")
+      .replace(/₺/g, "TL");
+  };
+
+  // --- PDF PAYLAŞIM VE OLUŞTURMA ---
   
+  const handleShare = async () => {
+    if (!results) return;
+    setIsPdfGenerating(true);
+
+    try {
+      const { jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
+
+      const doc = new jsPDF();
+
+      // 1. Kurum Başlığı
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.setTextColor(22, 163, 74); // Emerald Green
+      doc.text(normalizeForPDF("S.S. NILUFER ILCESI ESNAF VE SANATKARLAR"), 105, 20, { align: 'center' });
+      doc.text(normalizeForPDF("KREDI VE KEFALET KOOPERATIFI"), 105, 26, { align: 'center' });
+
+      // 2. Alt Başlık
+      doc.setFontSize(12);
+      doc.setTextColor(50, 50, 50); 
+      doc.text(normalizeForPDF("KREDI ODEME PLANI"), 105, 36, { align: 'center' });
+
+      // 3. Çizgi
+      doc.setDrawColor(200, 200, 200);
+      doc.line(20, 40, 190, 40);
+
+      // 4. Özet Bilgiler Kutusu
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      
+      doc.text(normalizeForPDF(`Kredi Tutari: ${formatMoneyForPDF(amount)}`), 20, 50);
+      doc.text(normalizeForPDF(`Vade: ${getVadeText()}`), 20, 56);
+      
+      doc.text(normalizeForPDF(`Toplam Geri Odeme: ${formatMoneyForPDF(results.totals.totalPayment)}`), 120, 50);
+      doc.text(normalizeForPDF(`Olusturulma Tarihi: ${new Date().toLocaleDateString('tr-TR')}`), 120, 56);
+
+      // 5. ÖDEME PLANI TABLOSU
+      const tableColumn = ["Taksit", "Tarih", "Anapara", "Faiz", "Komisyon", "Masraf", "Toplam"];
+      const tableRows = results.paymentSchedule.map(row => [
+          row.installmentNumber,
+          row.dueDate,
+          formatMoneyForPDF(row.principal),
+          formatMoneyForPDF(row.interest),
+          formatMoneyForPDF(row.commission),
+          formatMoneyForPDF(row.expense),
+          formatMoneyForPDF(row.total)
+      ]);
+
+      // @ts-ignore - autoTable types
+      autoTable(doc, {
+          head: [tableColumn.map(normalizeForPDF)],
+          body: tableRows,
+          startY: 65,
+          theme: 'grid',
+          styles: { 
+              font: "helvetica", 
+              fontSize: 8,
+              cellPadding: 2,
+              halign: 'right'
+          },
+          headStyles: { 
+              fillColor: [22, 163, 74],
+              textColor: [255, 255, 255],
+              fontStyle: 'bold',
+              halign: 'center'
+          },
+          columnStyles: {
+              0: { halign: 'center' },
+              1: { halign: 'center' } 
+          },
+          foot: [
+              [
+                  "", "", 
+                  formatMoneyForPDF(results.totals.principal),
+                  formatMoneyForPDF(results.totals.interest),
+                  formatMoneyForPDF(results.totals.commission),
+                  formatMoneyForPDF(results.totals.expense),
+                  formatMoneyForPDF(results.totals.totalPayment)
+              ]
+          ],
+          showFoot: 'lastPage',
+          footStyles: {
+              fillColor: [240, 240, 240],
+              textColor: [50, 50, 50],
+              fontStyle: 'bold',
+              halign: 'right'
+          }
+      });
+
+      // 6. KESİNTİLER VE NET TUTAR TABLOSU (YATAY TASARIM)
+      
+      // @ts-ignore
+      let finalY = doc.lastAutoTable.finalY + 10;
+      
+      // Sayfa sonu kontrolü
+      if (finalY > 250) {
+        doc.addPage();
+        finalY = 20;
+      }
+
+      // Başlık
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(50, 50, 50);
+      doc.text(normalizeForPDF("KESINTI DETAYLARI"), 14, finalY);
+      
+      // 1. Yatay Kesinti Tablosu
+      // @ts-ignore
+      autoTable(doc, {
+          startY: finalY + 2,
+          head: [[
+              normalizeForPDF("Pesin Masraf\n(%1.50)"),
+              normalizeForPDF("Bloke Sermaye\n(%2.00)"),
+              normalizeForPDF("Risk Sermayesi\n(%1.00)"),
+              normalizeForPDF("TESKOMB Payi\n(%0.25)"),
+              normalizeForPDF("Bolge Birligi\n(%0.25)")
+          ]],
+          body: [[
+              formatMoneyForPDF(results.deductions.pesinMasraf),
+              formatMoneyForPDF(results.deductions.blokeSermaye),
+              formatMoneyForPDF(results.deductions.riskSermayesi),
+              formatMoneyForPDF(results.deductions.teskomb),
+              formatMoneyForPDF(results.deductions.bolgeBirligi)
+          ]],
+          theme: 'grid',
+          styles: { 
+              font: "helvetica",
+              fontSize: 8,
+              cellPadding: 3,
+              halign: 'center', // Değerleri ortala
+              valign: 'middle'
+          },
+          headStyles: { 
+              fillColor: [245, 245, 245], 
+              textColor: [80, 80, 80], 
+              fontStyle: 'bold',
+              lineWidth: 0.1,
+              lineColor: [200, 200, 200]
+          },
+          bodyStyles: {
+              textColor: [50, 50, 50]
+          }
+      });
+
+      // 2. Net Toplamlar (Hemen altına, sağa yaslı bir özet gibi)
+      // @ts-ignore
+      const summaryY = doc.lastAutoTable.finalY + 5;
+
+      // Temiz görünüm için 'plain' tema kullanan küçük bir tablo
+      // @ts-ignore
+      autoTable(doc, {
+          startY: summaryY,
+          body: [[
+              normalizeForPDF("TOPLAM KESINTI"), 
+              formatMoneyForPDF(results.deductions.totalDeductions),
+              "", // Boşluk
+              normalizeForPDF("NET ELE GECEN TUTAR"), 
+              formatMoneyForPDF(results.netAmount)
+          ]],
+          theme: 'plain',
+          styles: { 
+              font: "helvetica", 
+              fontSize: 10, 
+              cellPadding: 2,
+              valign: 'middle'
+          },
+          columnStyles: {
+              0: { fontStyle: 'bold', halign: 'right', cellWidth: 40, textColor: [100, 100, 100] },
+              1: { fontStyle: 'bold', halign: 'left', cellWidth: 40 },
+              2: { cellWidth: 10 }, // Spacer
+              3: { fontStyle: 'bold', halign: 'right', cellWidth: 50, textColor: [22, 163, 74] },
+              4: { fontStyle: 'bold', halign: 'left', fontSize: 12, textColor: [22, 163, 74] }
+          }
+      });
+
+      // 7. Footer / Dipnot (Her Sayfaya)
+      const pageCount = doc.getNumberOfPages();
+      for(let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.setTextColor(150);
+          doc.text(normalizeForPDF("Bu belge bilgilendirme amaclidir. Resmi nitelik tasimaz."), 105, 290, { align: 'center' });
+      }
+
+      // PDF Oluştur
+      const pdfBlob = doc.output('blob');
+      const fileName = `odeme_plani_${amount}.pdf`;
+      const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
+
+      if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+          try {
+            await navigator.share({
+                files: [pdfFile],
+                title: 'Kredi Ödeme Planı',
+                text: 'Esnaf Kefalet Kredi hesaplama detayları ekte yer almaktadır.',
+            });
+          } catch (err) {
+            console.log("Paylaşım iptal edildi", err);
+          }
+      } else {
+          doc.save(fileName);
+          alert("Cihazınız dosya paylaşımını desteklemediği için dosya indirildi.");
+      }
+
+    } catch (error) {
+      console.error("PDF oluşturma hatası:", error);
+      alert("PDF oluşturulurken bir hata oluştu.");
+    } finally {
+      setIsPdfGenerating(false);
+    }
+  };
+
   const handlePrint = () => {
     if (!results) return;
     
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('Lütfen pop-up engelleyicisini devre dışı bırakın.');
-      return;
-    }
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'absolute';
+    iframe.style.width = '0px';
+    iframe.style.height = '0px';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
 
     const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Ödeme Planı</title>
+          <title>Kredi Ödeme Planı - S.S. Nilüfer EKK</title>
           <style>
-            body { font-family: Arial, Helvetica, sans-serif; padding: 20px; }
-            h2 { text-align: center; color: #333; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
-            th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
-            tr:nth-child(even) { background-color: #f9f9f9; }
-            .summary { margin-bottom: 20px; padding: 10px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 5px; }
-            .summary div { margin-bottom: 5px; font-size: 14px; }
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+            
+            body { 
+              font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+              padding: 40px; 
+              color: #1e293b; /* slate-800 */
+              -webkit-print-color-adjust: exact; 
+              print-color-adjust: exact;
+            }
+            
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+              border-bottom: 2px solid #e2e8f0; /* slate-200 */
+              padding-bottom: 20px;
+            }
+            
+            .org-name {
+              font-size: 18px;
+              font-weight: 700;
+              color: #059669; /* emerald-600 */
+              margin-bottom: 5px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            
+            h2 { 
+              font-size: 24px;
+              color: #0f172a; /* slate-900 */
+              margin: 10px 0;
+            }
+            
+            .meta-info {
+              font-size: 12px;
+              color: #64748b; /* slate-500 */
+              margin-top: 5px;
+            }
+
+            .summary-grid {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 15px;
+              margin-bottom: 30px;
+              background-color: #f8fafc; /* slate-50 */
+              border: 1px solid #e2e8f0; /* slate-200 */
+              border-radius: 8px;
+              padding: 20px;
+            }
+            
+            .summary-item {
+              display: flex;
+              flex-direction: column;
+            }
+            
+            .summary-label {
+              font-size: 11px;
+              text-transform: uppercase;
+              color: #64748b; /* slate-500 */
+              font-weight: 600;
+              margin-bottom: 4px;
+            }
+            
+            .summary-value {
+              font-size: 16px;
+              font-weight: 700;
+              color: #0f172a; /* slate-900 */
+            }
+
+            table { 
+              width: 100%; 
+              border-collapse: collapse; 
+              margin-top: 20px; 
+              font-size: 11px; 
+            }
+            
+            th { 
+              background-color: #0f172a; /* slate-900 */
+              color: white;
+              padding: 10px 8px;
+              text-align: right;
+              font-weight: 600;
+              text-transform: uppercase;
+            }
+            
+            th:first-child, th:nth-child(2), th:nth-child(3) {
+              text-align: center;
+            }
+            
+            td { 
+              border-bottom: 1px solid #e2e8f0; /* slate-200 */
+              padding: 8px; 
+              text-align: right;
+              color: #334155; /* slate-700 */
+            }
+            
+            td:first-child, td:nth-child(2), td:nth-child(3) {
+              text-align: center;
+              color: #64748b; /* slate-500 */
+            }
+            
+            tr:nth-child(even) { 
+              background-color: #f8fafc; /* slate-50 */
+            }
+            
+            tr:hover {
+              background-color: #f1f5f9; /* slate-100 */
+            }
+            
+            .total-row {
+              background-color: #e2e8f0 !important; /* slate-200 */
+              font-weight: 700;
+            }
+            
+            .total-row td {
+              border-top: 2px solid #cbd5e1; /* slate-300 */
+              color: #0f172a; /* slate-900 */
+              padding: 12px 8px;
+            }
+            
+            .tfoot-label {
+              text-align: right;
+              padding-right: 20px;
+            }
+
+            /* Footer Kesintiler Bölümü */
+            .footer-summary { 
+              margin-top: 40px; 
+              border: 1px solid #e2e8f0;
+              border-radius: 8px;
+              padding: 0;
+              overflow: hidden;
+              break-inside: avoid;
+            }
+            
+            .footer-header {
+              background-color: #f1f5f9; /* slate-100 */
+              padding: 10px 20px;
+              border-bottom: 1px solid #e2e8f0;
+              font-size: 12px;
+              font-weight: 700;
+              text-transform: uppercase;
+              color: #475569;
+            }
+
+            .deduction-row {
+              display: flex;
+              border-bottom: 1px solid #e2e8f0;
+            }
+            
+            .deduction-item {
+              flex: 1;
+              padding: 15px;
+              text-align: center;
+              border-right: 1px solid #e2e8f0;
+            }
+            
+            .deduction-item:last-child {
+              border-right: none;
+            }
+            
+            .deduction-label {
+              font-size: 10px;
+              color: #64748b;
+              margin-bottom: 4px;
+              display: block;
+            }
+            
+            .deduction-value {
+              font-size: 13px;
+              font-weight: 600;
+              color: #334155;
+            }
+
+            .net-total-row {
+              display: flex;
+              justify-content: flex-end;
+              align-items: center;
+              padding: 15px 20px;
+              background-color: #f0fdf4; /* green-50 */
+              gap: 30px;
+            }
+            
+            .total-group {
+              display: flex;
+              flex-direction: column;
+              align-items: flex-end;
+            }
+            
+            .total-label {
+              font-size: 10px;
+              text-transform: uppercase;
+              color: #64748b;
+              margin-bottom: 2px;
+            }
+            
+            .total-value {
+              font-size: 14px;
+              font-weight: 700;
+              color: #334155;
+            }
+            
+            .net-value {
+              font-size: 20px;
+              color: #059669; /* emerald-600 */
+            }
+
             @media print {
+              body { padding: 0; -webkit-print-color-adjust: exact; }
               .no-print { display: none; }
             }
           </style>
         </head>
         <body>
-          <h2>Kredi Ödeme Planı</h2>
-          <div class="summary">
-            <div><strong>Kredi Tutarı:</strong> ${formatMoney(amount)}</div>
-            <div><strong>Vade:</strong> ${getVadeText()}</div>
-            <div><strong>Toplam Geri Ödeme:</strong> ${formatMoney(results.totals.totalPayment)}</div>
+          <div class="header">
+            <div class="org-name">S. S. Nilüfer İlçesi Esnaf ve Sanatkarlar<br>Kredi ve Kefalet Kooperatifi</div>
+            <h2>Kredi Ödeme Planı</h2>
+            <div class="meta-info">Oluşturulma Tarihi: ${new Date().toLocaleDateString('tr-TR')}</div>
           </div>
+          
+          <div class="summary-grid">
+            <div class="summary-item">
+              <span class="summary-label">Kredi Tutarı</span>
+              <span class="summary-value" style="color: #059669;">${formatMoney(amount)}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Vade / Dönem</span>
+              <span class="summary-value">${getVadeText()}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Toplam Geri Ödeme</span>
+              <span class="summary-value" style="color: #2563eb;">${formatMoney(results.totals.totalPayment)}</span>
+            </div>
+          </div>
+
           <table>
             <thead>
               <tr>
-                <th>Taksit</th>
-                <th>Tarih</th>
-                <th>Gün</th>
+                <th width="5%">No</th>
+                <th width="12%">Tarih</th>
+                <th width="5%">Gün</th>
                 <th>Anapara</th>
                 <th>Faiz</th>
                 <th>Komisyon</th>
                 <th>Masraf</th>
-                <th>Toplam</th>
+                <th>Toplam Taksit</th>
               </tr>
             </thead>
             <tbody>
               ${results.paymentSchedule.map(row => `
                 <tr>
-                  <td style="text-align: center;">${row.installmentNumber}</td>
-                  <td style="text-align: center;">${row.dueDate}</td>
-                  <td style="text-align: center;">${row.days}</td>
+                  <td>${row.installmentNumber}</td>
+                  <td>${row.dueDate}</td>
+                  <td>${row.days}</td>
                   <td>${formatMoney(row.principal)}</td>
                   <td>${formatMoney(row.interest)}</td>
                   <td>${formatMoney(row.commission)}</td>
                   <td>${formatMoney(row.expense)}</td>
-                  <td style="font-weight: bold;">${formatMoney(row.total)}</td>
+                  <td style="font-weight: 700; color: #059669;">${formatMoney(row.total)}</td>
                 </tr>
               `).join('')}
-            </tbody>
-            <tfoot>
-              <tr style="font-weight: bold; background-color: #e9ecef;">
-                <td colspan="3" style="text-align: center;">GENEL TOPLAM</td>
+              <tr class="total-row">
+                <td colspan="3" class="tfoot-label">GENEL TOPLAMLAR</td>
                 <td>${formatMoney(results.totals.principal)}</td>
                 <td>${formatMoney(results.totals.interest)}</td>
                 <td>${formatMoney(results.totals.commission)}</td>
                 <td>${formatMoney(results.totals.expense)}</td>
-                <td>${formatMoney(results.totals.totalPayment)}</td>
+                <td style="color: #059669;">${formatMoney(results.totals.totalPayment)}</td>
               </tr>
-            </tfoot>
+            </tbody>
           </table>
+
+          <div class="footer-summary">
+            <div class="footer-header">Kesinti Detayları</div>
+            <div class="deduction-row">
+               <div class="deduction-item">
+                  <span class="deduction-label">Peşin Masraf (%1.50)</span>
+                  <span class="deduction-value">${formatMoney(results.deductions.pesinMasraf)}</span>
+               </div>
+               <div class="deduction-item">
+                  <span class="deduction-label">Bloke Sermaye (%2.00)</span>
+                  <span class="deduction-value">${formatMoney(results.deductions.blokeSermaye)}</span>
+               </div>
+               <div class="deduction-item">
+                  <span class="deduction-label">Risk Sermayesi (%1.00)</span>
+                  <span class="deduction-value">${formatMoney(results.deductions.riskSermayesi)}</span>
+               </div>
+               <div class="deduction-item">
+                  <span class="deduction-label">TESKOMB Payı (%0.25)</span>
+                  <span class="deduction-value">${formatMoney(results.deductions.teskomb)}</span>
+               </div>
+               <div class="deduction-item">
+                  <span class="deduction-label">Bölge Birliği (%0.25)</span>
+                  <span class="deduction-value">${formatMoney(results.deductions.bolgeBirligi)}</span>
+               </div>
+            </div>
+
+            <div class="net-total-row">
+               <div class="total-group">
+                  <span class="total-label">Toplam Kesinti</span>
+                  <span class="total-value" style="color: #dc2626;">- ${formatMoney(results.deductions.totalDeductions)}</span>
+               </div>
+               <div class="total-group">
+                  <span class="total-label">Ele Geçen Net Tutar</span>
+                  <span class="total-value net-value">${formatMoney(results.netAmount)}</span>
+               </div>
+            </div>
+          </div>
+
           <script>
             window.onload = function() { window.print(); }
           </script>
@@ -398,31 +879,11 @@ const KrediHesaplama: React.FC = () => {
       </html>
     `;
 
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
-  };
-
-  const handleShare = async () => {
-    const shareData = {
-        title: 'Kredi Hesaplama Sonuçları',
-        text: `Kredi Tutarı: ${formatMoney(amount)}\nVade: ${getVadeText()}\nToplam Geri Ödeme: ${results ? formatMoney(results.totals.totalPayment) : ''}`,
-        url: window.location.href
-    };
-
-    if (navigator.share) {
-        try {
-            await navigator.share(shareData);
-        } catch (err) {
-            console.log('Paylaşım iptal edildi', err);
-        }
-    } else {
-        try {
-            await navigator.clipboard.writeText(window.location.href);
-            alert('Sayfa bağlantısı panoya kopyalandı.');
-        } catch (err) {
-            alert('Paylaşım desteklenmiyor.');
-            console.error(err);
-        }
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(htmlContent);
+      doc.close();
     }
   };
 
@@ -579,10 +1040,15 @@ const KrediHesaplama: React.FC = () => {
                     <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/50">
                         <h3 className="text-xl font-bold text-white">Ödeme Planı</h3>
                         <div className="flex gap-2">
-                            <button onClick={handleShare} className="text-slate-400 hover:text-white text-xs flex items-center gap-1 bg-slate-800 px-3 py-1.5 rounded-lg transition-colors">
-                                <Share2 size={14} /> Paylaş
+                            <button 
+                                onClick={handleShare} 
+                                disabled={isPdfGenerating}
+                                className="text-slate-400 hover:text-white text-xs flex items-center gap-1 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                            >
+                                {isPdfGenerating ? <Loader2 size={14} className="animate-spin"/> : <Share2 size={14} />} 
+                                {isPdfGenerating ? 'Oluşturuluyor...' : 'PDF Paylaş / İndir'}
                             </button>
-                            <button onClick={handlePrint} className="text-slate-400 hover:text-white text-xs flex items-center gap-1 bg-slate-800 px-3 py-1.5 rounded-lg transition-colors">
+                            <button onClick={handlePrint} className="text-slate-400 hover:text-white text-xs flex items-center gap-1 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition-colors">
                                 <Printer size={14} /> Yazdır
                             </button>
                         </div>
