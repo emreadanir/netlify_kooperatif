@@ -63,7 +63,7 @@ export default function IletisimYonetimi() {
     return () => unsub();
   }, []);
 
-  // Data Fetching
+  // Data Fetch
   useEffect(() => {
     if (!user) return;
 
@@ -175,7 +175,6 @@ export default function IletisimYonetimi() {
 
       <form onSubmit={handleSubmit} className="max-w-6xl mx-auto">
         
-        {/* ⭐️ GÜNCELLEME: Grid yapısı değiştirildi. Sol sütun: Adres & Harita, Sağ Sütun: İletişim Kanalları */}
         <div className="grid lg:grid-cols-12 gap-8">
             
             {/* SOL SÜTUN (5 BİRİM) - LOKASYON BİLGİLERİ */}
@@ -211,29 +210,33 @@ export default function IletisimYonetimi() {
                     </div>
                 </div>
 
-                {/* HARİTA EMBED ALANI */}
+                {/* HARİTA EMBED ALANI - GÜNCELLENDİ */}
                 <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6">
                     <div className="flex items-center gap-3 mb-4 border-b border-slate-700 pb-4">
                         <Globe className="text-emerald-400" size={24} />
                         <h3 className="text-xl font-bold text-white">Google Harita</h3>
                     </div>
                     
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                         <label className="block text-sm font-medium text-slate-400">Embed Linki (src)</label>
-                        <div className="flex gap-3 flex-col md:flex-row">
-                            <input 
-                                type="text" 
-                                className="flex-1 bg-slate-900/50 border border-slate-600 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500 font-mono text-xs"
-                                placeholder="https://www.google.com/maps/embed?pb=..."
-                                value={mapEmbedUrl}
-                                onChange={(e) => setMapEmbedUrl(e.target.value)}
-                            />
-                            <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-900/30 px-3 py-2 md:py-0 rounded-lg border border-slate-700/50 whitespace-nowrap overflow-hidden text-ellipsis">
-                                <Info size={14} className="shrink-0" />
-                                <span className="truncate">Google Maps &quot;Paylaş &gt; Harita Yerleştir&quot; kısmındaki src linki</span>
+                        
+                        {/* Input Alanı */}
+                        <input 
+                            type="text" 
+                            className="w-full bg-slate-900/50 border border-slate-600 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500 font-mono text-xs"
+                            placeholder="https://www.google.com/maps/embed?pb=..."
+                            value={mapEmbedUrl}
+                            onChange={(e) => setMapEmbedUrl(e.target.value)}
+                        />
+
+                        {/* Bilgi Notu - Alt Alta ve Daha Okunaklı */}
+                        <div className="flex items-start gap-3 p-3 bg-slate-900/30 rounded-xl border border-slate-700/50 mt-2">
+                            <Info size={18} className="shrink-0 text-emerald-500 mt-0.5" />
+                            <div className="text-xs text-slate-400 leading-relaxed">
+                                <strong className="text-slate-300 block mb-1">Nasıl Eklenir?</strong>
+                                Google Maps'te konumunuzu açın, <b>"Paylaş"</b> butonuna tıklayın, <b>"Harita yerleştir"</b> sekmesine geçin ve <b>"HTML'yi kopyala"</b> diyerek sadece <code>src="..."</code> içindeki linki buraya yapıştırın.
                             </div>
                         </div>
-                        <p className="text-[10px] text-slate-500 mt-1">Google Maps &quot;Paylaş &gt; Harita Yerleştir&quot; kısmındaki iframe kodu içindeki src linkini yapıştırın.</p>
                     </div>
 
                     {/* Önizleme */}

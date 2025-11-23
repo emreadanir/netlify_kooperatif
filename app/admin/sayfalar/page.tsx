@@ -6,12 +6,13 @@ import Link from 'next/link';
 
 // Örnek Sayfa Verisi
 const pages = [
-  { id: 1, title: 'Anasayfa', slug: '/', status: 'Aktif', lastUpdated: '21.11.2024' },
-  { id: 2, title: 'Kredi Çeşitleri', slug: '/kredi-cesitleri', status: 'Aktif', lastUpdated: '20.11.2024' },
-  { id: 3, title: 'Kredi Kullanım Şartları', slug: '/kredi-kullanim-sartlari', status: 'Aktif', lastUpdated: '19.11.2024' },
-  { id: 4, title: 'Faiz Oranları', slug: '/faiz-orani', status: 'Aktif', lastUpdated: '18.11.2024' },
-  { id: 5, title: 'Kanun ve Yönetmelikler', slug: '/kanun-ve-yonetmelikler', status: 'Aktif', lastUpdated: '15.11.2024' },
-  { id: 7, title: 'İletişim', slug: '/iletisim', status: 'Aktif', lastUpdated: '01.11.2024' },
+  // ⭐️ YENİ: Anasayfa için düzenleme linki eklendi
+  { id: 1, title: 'Anasayfa', slug: '/', status: 'Aktif', lastUpdated: '21.11.2024', editLink: '/admin/sayfalar/ana-sayfa' },
+  { id: 2, title: 'Kredi Çeşitleri', slug: '/kredi-cesitleri', status: 'Aktif', lastUpdated: '20.11.2024', editLink: '/admin/sayfalar/kredi-cesitleri' },
+  { id: 3, title: 'Kredi Kullanım Şartları', slug: '/kredi-kullanim-sartlari', status: 'Aktif', lastUpdated: '19.11.2024', editLink: '/admin/sayfalar/kredi-kullanim-sartlari' },
+  { id: 4, title: 'Faiz Oranları', slug: '/faiz-orani', status: 'Aktif', lastUpdated: '18.11.2024', editLink: '/admin/sayfalar/faiz-orani' },
+  { id: 5, title: 'Kanun ve Yönetmelikler', slug: '/kanun-ve-yonetmelikler', status: 'Aktif', lastUpdated: '15.11.2024', editLink: '/admin/sayfalar/kanun-ve-yonetmelikler' },
+  { id: 7, title: 'İletişim', slug: '/iletisim', status: 'Aktif', lastUpdated: '01.11.2024', editLink: '/admin/sayfalar/iletisim' },
 ];
 
 export default function SayfalarYonetimi() {
@@ -78,25 +79,9 @@ export default function SayfalarYonetimi() {
                                 <Eye size={16} />
                             </Link>
                             
-                            {/* ⭐️ GÜNCELLEME: Linkler */}
-                            {page.slug === '/kredi-cesitleri' ? (
-                                <Link href="/admin/sayfalar/kredi-cesitleri" className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all shadow-lg shadow-blue-500/20" title="İçeriği Düzenle">
-                                    <Edit size={16} />
-                                </Link>
-                            ) : page.slug === '/kredi-kullanim-sartlari' ? (
-                                <Link href="/admin/sayfalar/kredi-kullanim-sartlari" className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all shadow-lg shadow-blue-500/20" title="İçeriği Düzenle">
-                                    <Edit size={16} />
-                                </Link>
-                            ) : page.slug === '/faiz-orani' ? (
-                                <Link href="/admin/sayfalar/faiz-orani" className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all shadow-lg shadow-blue-500/20" title="İçeriği Düzenle">
-                                    <Edit size={16} />
-                                </Link>
-                            ) : page.slug === '/kanun-ve-yonetmelikler' ? (
-                                <Link href="/admin/sayfalar/kanun-ve-yonetmelikler" className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all shadow-lg shadow-blue-500/20" title="İçeriği Düzenle">
-                                    <Edit size={16} />
-                                </Link>
-                            ) : page.slug === '/iletisim' ? (
-                                <Link href="/admin/sayfalar/iletisim" className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all shadow-lg shadow-blue-500/20" title="İçeriği Düzenle">
+                            {/* ⭐️ GÜNCELLEME: Dinamik Linkleme */}
+                            {page.editLink ? (
+                                <Link href={page.editLink} className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all shadow-lg shadow-blue-500/20" title="İçeriği Düzenle">
                                     <Edit size={16} />
                                 </Link>
                             ) : (

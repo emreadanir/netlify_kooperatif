@@ -1,9 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
-// 1. Next.js'ten gerekli tipleri içe aktarın
-import { Metadata } from 'next'; 
-import React from "react"; // React.ReactNode için bu import gerekli
+import { Metadata } from 'next';
+import React from "react";
+import FaviconUpdater from "@/components/FaviconUpdater"; // ⭐️ YENİ
 
 // Font tanımlamaları
 const geistSans = Geist({
@@ -16,19 +15,18 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// 2. Metadata objesine tip ataması yapın
 export const metadata: Metadata = {
   title: "S. S. Nilüfer İlçesi Esnaf ve Sanatkarlar Kredi ve Kefalet Kooperatifi",
   description: "Esnaf ve sanatkarlarımızın finansal ihtiyaçlarına yönelik çözümler sunan kredi kooperatifi resmi web sitesi.",
+  icons: {
+    icon: '/kooperatif_logo.webp', // Varsayılan olarak logoyu ayarla
+  },
 };
 
-// 3. Bileşen props'u için arayüz (Interface) tanımlayın
 interface RootLayoutProps {
-  // children prop'unun tipi React.ReactNode olmalıdır (diğer bileşenleri/sayfaları temsil eder)
   children: React.ReactNode; 
 }
 
-// 4. Bileşen fonksiyonuna tanımlanan props arayüzünü uygulayın
 export default function RootLayout({
   children,
 }: RootLayoutProps) {
@@ -37,6 +35,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* ⭐️ Favicon Güncelleyiciyi Buraya Ekliyoruz */}
+        <FaviconUpdater />
+        
         {children}
       </body>
     </html>
