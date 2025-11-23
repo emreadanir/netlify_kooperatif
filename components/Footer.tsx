@@ -87,13 +87,14 @@ const socialIconMap: Record<string, any> = {
   website: Globe
 };
 
+// Renkleri tema ile uyumlu hale getirmek için hover classlarını güncelledik
 const socialColorClass: Record<string, string> = {
-  facebook: "hover:bg-indigo-600 hover:border-indigo-500 shadow-lg hover:shadow-indigo-500/30",
-  twitter: "hover:bg-slate-950 hover:border-slate-600 shadow-lg hover:shadow-slate-950/50 text-slate-300 hover:text-white",
-  instagram: "hover:bg-pink-600 hover:border-pink-500 shadow-lg hover:shadow-pink-500/30",
-  linkedin: "hover:bg-blue-700 hover:border-blue-600 shadow-lg hover:shadow-blue-700/30",
-  youtube: "hover:bg-red-600 hover:border-red-500 shadow-lg hover:shadow-red-600/30",
-  website: "hover:bg-emerald-600 hover:border-emerald-500 shadow-lg hover:shadow-emerald-600/30"
+  facebook: "hover:bg-[#1877F2] hover:border-[#1877F2] shadow-lg hover:shadow-[#1877F2]/30",
+  twitter: "hover:bg-black hover:border-gray-800 shadow-lg hover:shadow-black/50 text-foreground/60 hover:text-white",
+  instagram: "hover:bg-[#E4405F] hover:border-[#E4405F] shadow-lg hover:shadow-[#E4405F]/30",
+  linkedin: "hover:bg-[#0A66C2] hover:border-[#0A66C2] shadow-lg hover:shadow-[#0A66C2]/30",
+  youtube: "hover:bg-[#FF0000] hover:border-[#FF0000] shadow-lg hover:shadow-[#FF0000]/30",
+  website: "hover:bg-primary hover:border-primary shadow-lg hover:shadow-primary/30"
 };
 
 const Footer: React.FC = () => {
@@ -110,7 +111,7 @@ const Footer: React.FC = () => {
     setIsMounted(true);
     if (!db) return;
 
-    // 1. Site Ayarları (Logo, Menüler, Sosyal Medya vb.)
+    // 1. Site Ayarları
     const layoutRef = doc(db, 'artifacts', appId, 'public', 'data', 'site_settings', 'layout');
     const unsubLayout = onSnapshot(layoutRef, (docSnap) => {
         if (docSnap.exists()) {
@@ -125,7 +126,6 @@ const Footer: React.FC = () => {
                     ...prev,
                     ...data.footer,
                     socialLinks: normalizedSocialLinks,
-                    // contactInfo buradan ALINMIYOR artık
                     quickLinksTitle: data.footer.quickLinksTitle || prev.quickLinksTitle,
                     legislationLinksTitle: data.footer.legislationLinksTitle || prev.legislationLinksTitle,
                     logoUrl: data.navbar?.logoUrl || prev.logoUrl,
@@ -136,13 +136,12 @@ const Footer: React.FC = () => {
         }
     });
 
-    // 2. İletişim Bilgileri (Doğrudan İletişim Sayfası Verisinden)
+    // 2. İletişim Bilgileri
     const contactRef = doc(db, 'artifacts', appId, 'public', 'data', 'page-content', 'contact-info');
     const unsubContact = onSnapshot(contactRef, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
             
-            // İletişim sayfasındaki veri yapısını Footer'a uyarla
             const phones = data.phones?.map((p: any) => p.number) || (data.phone ? [data.phone] : []);
             const emails = data.emails?.map((e: any) => e.address) || (data.email ? [data.email] : []);
             const address = data.address ? `${data.address}\n${data.city || ''}` : 'Adres bilgisi yüklenemedi.';
@@ -182,10 +181,10 @@ const Footer: React.FC = () => {
   };
 
   return (
-    <footer className="relative bg-[#0f172a] pt-16 pb-6 overflow-hidden border-t border-slate-800">
+    <footer className="relative bg-background pt-16 pb-6 overflow-hidden border-t border-foreground/10">
       <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
-        <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] bg-amber-600/10 rounded-full blur-[120px] mix-blend-screen"></div>
-        <div className="absolute bottom-[10%] right-[-5%] w-[700px] h-[700px] bg-indigo-900/20 rounded-full blur-[100px] mix-blend-screen"></div>
+        <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] bg-secondary/10 rounded-full blur-[120px] mix-blend-screen"></div>
+        <div className="absolute bottom-[10%] right-[-5%] w-[700px] h-[700px] bg-primary/20 rounded-full blur-[100px] mix-blend-screen"></div>
       </div>
 
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -195,24 +194,24 @@ const Footer: React.FC = () => {
           <div className="space-y-6">
             <Link href="/" className="flex items-center cursor-pointer group w-fit gap-4" onClick={scrollToTop}>
               <div className="relative flex-shrink-0">
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-400/40 via-orange-500/40 to-transparent rounded-full blur-2xl opacity-0 group-hover:opacity-70 transition-opacity duration-500 transform scale-150"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-secondary/40 via-accent/40 to-transparent rounded-full blur-2xl opacity-0 group-hover:opacity-70 transition-opacity duration-500 transform scale-150"></div>
                 <img src={settings.logoUrl} alt="Logo" className="h-24 w-24 object-contain drop-shadow-2xl transition-transform duration-300 group-hover:scale-105 relative z-10" />
               </div>
               <div className="flex flex-col relative">
-                <span className="font-bold text-sm text-white leading-tight tracking-wide group-hover:text-amber-400 transition-colors drop-shadow-md">{settings.logoText}</span>
-                <span className="text-[9px] text-slate-400 font-bold tracking-[0.2em] uppercase group-hover:text-white transition-colors">{settings.logoSubText}</span>
-                <div className="absolute -bottom-2 left-0 w-0 h-px bg-gradient-to-r from-amber-500 to-transparent group-hover:w-full transition-all duration-700 ease-out opacity-50"></div>
+                <span className="font-bold text-sm text-foreground leading-tight tracking-wide group-hover:text-secondary transition-colors drop-shadow-md">{settings.logoText}</span>
+                <span className="text-[9px] text-foreground/60 font-bold tracking-[0.2em] uppercase group-hover:text-foreground transition-colors">{settings.logoSubText}</span>
+                <div className="absolute -bottom-2 left-0 w-0 h-px bg-gradient-to-r from-secondary to-transparent group-hover:w-full transition-all duration-700 ease-out opacity-50"></div>
               </div>
             </Link>
             
-            <p className="text-slate-400 text-sm leading-relaxed">{settings.description}</p>
+            <p className="text-foreground/60 text-sm leading-relaxed">{settings.description}</p>
 
             <div className="flex gap-4 pt-2 flex-wrap">
               {settings.socialLinks.map((link, idx) => {
                   if (!link.url || link.url === '#' || link.url.length < 2) return null;
                   
                   const IconComponent = socialIconMap[link.platform] || Globe;
-                  const hoverClass = socialColorClass[link.platform] || "hover:bg-slate-700 hover:border-slate-600";
+                  const hoverClass = socialColorClass[link.platform] || "hover:bg-foreground/20 hover:border-foreground/30";
 
                   return (
                     <a 
@@ -220,7 +219,7 @@ const Footer: React.FC = () => {
                         href={normalizeUrl(link.url)} 
                         target="_blank" 
                         rel="noreferrer" 
-                        className={`w-10 h-10 rounded-full bg-slate-800/50 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-all duration-300 ${hoverClass}`}
+                        className={`w-10 h-10 rounded-full bg-foreground/5 border border-foreground/10 flex items-center justify-center text-foreground/60 hover:text-white transition-all duration-300 ${hoverClass}`}
                         title={link.platform === 'twitter' ? 'X (Twitter)' : link.platform.charAt(0).toUpperCase() + link.platform.slice(1)}
                     >
                         <IconComponent size={18} />
@@ -232,14 +231,14 @@ const Footer: React.FC = () => {
 
           {/* 2. SÜTUN: HIZLI ERİŞİM */}
           <div>
-            <h4 className="text-white font-bold text-lg mb-6 flex items-center gap-2">
-              <span className="w-8 h-1 bg-amber-500 rounded-full"></span> {settings.quickLinksTitle}
+            <h4 className="text-foreground font-bold text-lg mb-6 flex items-center gap-2">
+              <span className="w-8 h-1 bg-secondary rounded-full"></span> {settings.quickLinksTitle}
             </h4>
             <ul className="space-y-3">
               {settings.quickLinks.map((item, idx) => (
                 <li key={idx}>
-                  <Link href={item.href} className="group flex items-center text-slate-400 hover:text-amber-400 text-sm transition-colors">
-                    <ChevronRight size={14} className="mr-2 text-slate-600 group-hover:text-amber-500 transition-colors" /> {item.name}
+                  <Link href={item.href} className="group flex items-center text-foreground/60 hover:text-secondary text-sm transition-colors">
+                    <ChevronRight size={14} className="mr-2 text-foreground/40 group-hover:text-secondary transition-colors" /> {item.name}
                   </Link>
                 </li>
               ))}
@@ -248,14 +247,14 @@ const Footer: React.FC = () => {
 
           {/* 3. SÜTUN: MEVZUAT */}
           <div>
-            <h4 className="text-white font-bold text-lg mb-6 flex items-center gap-2">
-              <span className="w-8 h-1 bg-indigo-500 rounded-full"></span> {settings.legislationLinksTitle}
+            <h4 className="text-foreground font-bold text-lg mb-6 flex items-center gap-2">
+              <span className="w-8 h-1 bg-primary rounded-full"></span> {settings.legislationLinksTitle}
             </h4>
             <ul className="space-y-3">
               {settings.legislationLinks.map((item, idx) => (
                 <li key={idx}>
-                  <Link href={item.href} className="group flex items-center text-slate-400 hover:text-indigo-400 text-sm transition-colors">
-                    <ArrowRight size={14} className="mr-2 text-slate-600 group-hover:text-indigo-500 transition-colors" /> {item.name}
+                  <Link href={item.href} className="group flex items-center text-foreground/60 hover:text-primary text-sm transition-colors">
+                    <ArrowRight size={14} className="mr-2 text-foreground/40 group-hover:text-primary transition-colors" /> {item.name}
                   </Link>
                 </li>
               ))}
@@ -264,27 +263,27 @@ const Footer: React.FC = () => {
 
           {/* 4. SÜTUN: İLETİŞİM */}
           <div>
-            <h4 className="text-white font-bold text-lg mb-6 flex items-center gap-2">
-              <span className="w-8 h-1 bg-cyan-500 rounded-full"></span> Bize Ulaşın
+            <h4 className="text-foreground font-bold text-lg mb-6 flex items-center gap-2">
+              <span className="w-8 h-1 bg-accent rounded-full"></span> Bize Ulaşın
             </h4>
             <ul className="space-y-5">
               {/* Adres */}
               <li className="flex items-start gap-4 group">
-                <div className="w-10 h-10 rounded-lg bg-slate-800/50 border border-slate-700 flex items-center justify-center text-amber-500 shrink-0 group-hover:border-amber-500/50 transition-colors"><MapPin size={20} /></div>
-                <span className="text-slate-400 text-sm leading-relaxed group-hover:text-slate-200 transition-colors whitespace-pre-line">
+                <div className="w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center text-secondary shrink-0 group-hover:border-secondary/50 transition-colors"><MapPin size={20} /></div>
+                <span className="text-foreground/60 text-sm leading-relaxed group-hover:text-foreground transition-colors whitespace-pre-line">
                     {settings.contactInfo.address}
                 </span>
               </li>
               
-              {/* Telefonlar (Tek İkon, Liste Halinde) */}
+              {/* Telefonlar */}
               {settings.contactInfo.phones.length > 0 && (
                 <li className="flex items-start gap-4 group">
-                    <div className="w-10 h-10 rounded-lg bg-slate-800/50 border border-slate-700 flex items-center justify-center text-indigo-500 shrink-0 group-hover:border-indigo-500/50 transition-colors">
+                    <div className="w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center text-primary shrink-0 group-hover:border-primary/50 transition-colors">
                         <Phone size={20} />
                     </div>
                     <div className="flex flex-col gap-1 justify-center min-h-[2.5rem]">
                         {settings.contactInfo.phones.map((phone, idx) => (
-                            <span key={idx} className="text-slate-400 text-sm group-hover:text-slate-200 transition-colors">
+                            <span key={idx} className="text-foreground/60 text-sm group-hover:text-foreground transition-colors">
                                 {phone}
                             </span>
                         ))}
@@ -292,15 +291,15 @@ const Footer: React.FC = () => {
                 </li>
               )}
               
-              {/* E-Postalar (Tek İkon, Liste Halinde) */}
+              {/* E-Postalar */}
               {settings.contactInfo.emails.length > 0 && (
                 <li className="flex items-start gap-4 group">
-                    <div className="w-10 h-10 rounded-lg bg-slate-800/50 border border-slate-700 flex items-center justify-center text-cyan-500 shrink-0 group-hover:border-cyan-500/50 transition-colors">
+                    <div className="w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center text-accent shrink-0 group-hover:border-accent/50 transition-colors">
                         <Mail size={20} />
                     </div>
                     <div className="flex flex-col gap-1 justify-center min-h-[2.5rem]">
                         {settings.contactInfo.emails.map((email, idx) => (
-                            <span key={idx} className="text-slate-400 text-sm group-hover:text-slate-200 transition-colors break-all">
+                            <span key={idx} className="text-foreground/60 text-sm group-hover:text-foreground transition-colors break-all">
                                 {email}
                             </span>
                         ))}
@@ -312,14 +311,14 @@ const Footer: React.FC = () => {
         </div>
 
         {/* --- ALT BİLGİ --- */}
-        <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 relative">
-          <div className="absolute top-[-1px] left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-500/50 to-transparent"></div>
-          <p className="text-slate-500 text-sm text-center md:text-left">
+        <div className="border-t border-foreground/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 relative">
+          <div className="absolute top-[-1px] left-0 w-full h-px bg-gradient-to-r from-transparent via-foreground/30 to-transparent"></div>
+          <p className="text-foreground/50 text-sm text-center md:text-left">
             {getCopyrightText(settings.copyrightText)}
           </p>
-          <div className="flex gap-6 text-sm text-slate-500">
-            <Link href="#" className="hover:text-white transition-colors">Gizlilik Politikası</Link>
-            <Link href="#" className="hover:text-white transition-colors">Kullanım Şartları</Link>
+          <div className="flex gap-6 text-sm text-foreground/50">
+            <Link href="#" className="hover:text-foreground transition-colors">Gizlilik Politikası</Link>
+            <Link href="#" className="hover:text-foreground transition-colors">Kullanım Şartları</Link>
           </div>
         </div>
       </div>
