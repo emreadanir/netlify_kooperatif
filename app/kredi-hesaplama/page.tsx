@@ -5,9 +5,10 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer'; 
 import { Calculator, RefreshCcw, Wallet, PieChart, TrendingUp, Info, Table2, Briefcase, Building2, Truck, ChevronDown, ChevronUp, Share2, Printer, Loader2 } from 'lucide-react';
 
-// Firebase imports
-import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+// Merkezi yapılandırmadan import
+import { auth, db } from '@/lib/firebase';
+import { signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 // --- TİP TANIMLARI ---
 
@@ -19,6 +20,24 @@ interface DeductionRates {
   bolgeBirligi: number;
   teskomb: number;
   pesinMasraf: number;
+}
+
+interface CreditLimits {
+  business: number;
+  building: number;
+  vehicle: number;
+}
+
+interface CreditMaxTerms {
+  business: number;
+  building: number;
+  vehicle: number;
+}
+
+interface AdvancedSettings {
+  daysInYear: number;
+  baseCommission: number;
+  showTableDecimals: boolean;
 }
 
 interface InstallmentRow {
@@ -54,13 +73,9 @@ interface CalculationResults {
 }
 
 // --- SABİTLER ---
+// (Bu sabitler artık veritabanından gelen varsayılanlar olarak kullanılıyor)
 
-const CONFIG = {
-    daysInYearForInterest: 360
-};
-
-// Kesinti Oranları (Yüzde)
-const DEFAULT_RATES: DeductionRates = {
+const DEFAULT_RATES_INITIAL: DeductionRates = {
     pesinMasraf: 1.50,   
     blokeSermaye: 2.00,  
     riskSermayesi: 1.00, 
@@ -68,17 +83,27 @@ const DEFAULT_RATES: DeductionRates = {
     bolgeBirligi: 0.25   
 };
 
-const INTEREST_RATE_ANNUAL = 25.00; // %25 Yıllık Faiz
+const DEFAULT_LIMITS_INITIAL: CreditLimits = {
+    business: 1000000,
+    building: 2500000,
+    vehicle: 2500000
+};
 
-// Limitler
-const BUSINESS_MAX_AMOUNT = 1000000;
-const BUILDING_MAX_AMOUNT = 2500000;
-const VEHICLE_MAX_AMOUNT = 2500000;
+const DEFAULT_MAX_TERMS_INITIAL: CreditMaxTerms = {
+    business: 48,
+    building: 60,
+    vehicle: 48
+};
+
+const DEFAULT_ADVANCED_INITIAL: AdvancedSettings = {
+    daysInYear: 360,
+    baseCommission: 1.0,
+    showTableDecimals: true
+};
+
+const INTEREST_RATE_ANNUAL_INITIAL = 25.00; 
 
 const MIN_TERM = 12;
-const BUSINESS_MAX_TERM = 48;
-const BUILDING_MAX_TERM = 60;
-const VEHICLE_MAX_TERM = 48;
 const YEARLY_STEP = 12;
 
 // --- HESAPLAMA MOTORU ---
@@ -89,7 +114,8 @@ function calculatePaymentPlan(
     period: number,
     installments: number,
     annualInterestRate: number,
-    rates: DeductionRates
+    rates: DeductionRates,
+    advanced: AdvancedSettings // Yeni parametre
 ): CalculationResults {
     
     const loanDate = new Date(loanDateStr);
@@ -110,6 +136,10 @@ function calculatePaymentPlan(
     const lastDayOfLoanMonth = new Date(loanDate.getFullYear(), loanDate.getMonth() + 1, 0).getDate();
     const isEndOfMonthLoan = (loanDay === lastDayOfLoanMonth);
 
+    // Advanced settings kullanımı
+    const daysInYear = advanced.daysInYear || 360;
+    const baseCommissionRate = (advanced.baseCommission || 1.0) / 100;
+
     for (let i = 1; i <= installments; i++) {
         const currentYearOfLoan = Math.floor((i - 1) / installmentsPerYear) + 1;
         const installmentWithinYear = ((i - 1) % installmentsPerYear) + 1;
@@ -125,17 +155,18 @@ function calculatePaymentPlan(
         let days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
         if (i === 1) days += 1;
 
-        const interest_full = remainingPrincipal * (annualInterestRate / 100 / CONFIG.daysInYearForInterest) * days;
+        // Gelişmiş ayardan gelen gün sayısını kullan
+        const interest_full = remainingPrincipal * (annualInterestRate / 100 / daysInYear) * days;
 
         const totalYears = Math.ceil(installments * period / 12);
         let yearlyCommission = 0;
 
-        const baseCommissionRate = 0.01; 
+        // Gelişmiş ayardan gelen baz komisyonu kullan
         if (totalYears <= 1) {
             if (currentYearOfLoan === 1) yearlyCommission = loanAmount * baseCommissionRate;
         } else if (totalYears === 2) {
             if (currentYearOfLoan === 1) yearlyCommission = loanAmount * baseCommissionRate;
-            else if (currentYearOfLoan === 2) yearlyCommission = loanAmount * 0.005;
+            else if (currentYearOfLoan === 2) yearlyCommission = loanAmount * (baseCommissionRate * 0.5);
         } else if (totalYears === 3) {
             const baseComm = loanAmount * baseCommissionRate;
             if (currentYearOfLoan === 1) yearlyCommission = baseComm;
@@ -143,9 +174,9 @@ function calculatePaymentPlan(
             else if (currentYearOfLoan === 3) yearlyCommission = baseComm * (1/3);
         } else if (totalYears === 4) {
             if (currentYearOfLoan === 1) yearlyCommission = loanAmount * baseCommissionRate;
-            else if (currentYearOfLoan === 2) yearlyCommission = loanAmount * 0.0075;
-            else if (currentYearOfLoan === 3) yearlyCommission = loanAmount * 0.005;
-            else if (currentYearOfLoan === 4) yearlyCommission = loanAmount * 0.0025;
+            else if (currentYearOfLoan === 2) yearlyCommission = loanAmount * (baseCommissionRate * 0.75);
+            else if (currentYearOfLoan === 3) yearlyCommission = loanAmount * (baseCommissionRate * 0.5);
+            else if (currentYearOfLoan === 4) yearlyCommission = loanAmount * (baseCommissionRate * 0.25);
         } else if (totalYears >= 5) {
             const baseComm = loanAmount * baseCommissionRate;
             if (currentYearOfLoan === 1) yearlyCommission = baseComm;
@@ -251,6 +282,7 @@ function calculatePaymentPlan(
 }
 
 const KrediHesaplama: React.FC = () => {
+  // State
   const [amount, setAmount] = useState<number>(500000); 
   const [term, setTerm] = useState<number>(24); 
   const [frequency, setFrequency] = useState<number>(1);
@@ -258,25 +290,88 @@ const KrediHesaplama: React.FC = () => {
   const [loanDate, setLoanDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
   
+  // Dynamic States
+  const [currentRates, setCurrentRates] = useState<DeductionRates>(DEFAULT_RATES_INITIAL);
+  const [currentLimits, setCurrentLimits] = useState<CreditLimits>(DEFAULT_LIMITS_INITIAL);
+  const [currentMaxTerms, setCurrentMaxTerms] = useState<CreditMaxTerms>(DEFAULT_MAX_TERMS_INITIAL);
+  const [currentInterest, setCurrentInterest] = useState<number>(INTEREST_RATE_ANNUAL_INITIAL);
+  const [currentAdvanced, setCurrentAdvanced] = useState<AdvancedSettings>(DEFAULT_ADVANCED_INITIAL);
+  const [visibility, setVisibility] = useState({ business: true, building: true, vehicle: true });
+  const [isRatesLoaded, setIsRatesLoaded] = useState(false);
+
   const [results, setResults] = useState<CalculationResults | null>(null);
   const [showSchedule, setShowSchedule] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [user, setUser] = useState<any>(null);
 
-  const maxAmount = creditType === 'business' ? BUSINESS_MAX_AMOUNT : BUILDING_MAX_AMOUNT;
-  const maxTerm = creditType === 'business' ? BUSINESS_MAX_TERM : creditType === 'vehicle' ? VEHICLE_MAX_TERM : BUILDING_MAX_TERM;
+  const maxAmount = creditType === 'business' ? currentLimits.business 
+                  : creditType === 'building' ? currentLimits.building 
+                  : currentLimits.vehicle;
+
+  const maxTerm = creditType === 'business' ? currentMaxTerms.business
+                : creditType === 'building' ? currentMaxTerms.building
+                : currentMaxTerms.vehicle;
+
   const rangeStep = creditType === 'business' ? 5000 : 25000; 
 
-  // Firebase Auth
+  // Firebase Initialization
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      if (u) setUser(u);
-      else signInAnonymously(auth).catch((err) => console.error("Auth Error:", err));
+    if (!auth || !db) {
+        console.warn("Firebase başlatılamadı, çevrimdışı mod.");
+        setIsRatesLoaded(true);
+        return;
+    }
+
+    const appId = typeof window !== 'undefined' && (window as any).__app_id ? (window as any).__app_id : 'default-app-id';
+
+    const initAuth = async () => {
+      try {
+        const token = (window as any).__initial_auth_token;
+        if (token) {
+          await signInWithCustomToken(auth, token);
+        } else {
+          if (!auth.currentUser) await signInAnonymously(auth);
+        }
+      } catch (error) {
+        console.error("Auth init error:", error);
+      }
+    };
+    initAuth();
+
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      setUser(u);
+      if (u) {
+        try {
+          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'site_settings', 'credit_calculation');
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (data.rates) setCurrentRates(data.rates as DeductionRates);
+            if (data.annualInterestRate) setCurrentInterest(data.annualInterestRate);
+            if (data.limits) setCurrentLimits(data.limits as CreditLimits);
+            if (data.maxTerms) setCurrentMaxTerms(data.maxTerms as CreditMaxTerms);
+            if (data.advanced) setCurrentAdvanced(data.advanced as AdvancedSettings);
+            if (data.visibility) {
+                setVisibility(data.visibility);
+                if (!data.visibility[creditType]) {
+                    if (data.visibility.business) setCreditType('business');
+                    else if (data.visibility.building) setCreditType('building');
+                    else if (data.visibility.vehicle) setCreditType('vehicle');
+                }
+            }
+          }
+        } catch (error) {
+          console.error("Ayarlar çekilemedi, varsayılanlar kullanılıyor.", error);
+        }
+      }
+      setIsRatesLoaded(true);
     });
-    return () => unsub();
+
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
+    if (!isRatesLoaded) return;
+
     let validAmount = amount;
     if (validAmount > maxAmount) validAmount = maxAmount;
     
@@ -295,16 +390,19 @@ const KrediHesaplama: React.FC = () => {
         loanDate,
         frequency,
         finalTerm / frequency,
-        INTEREST_RATE_ANNUAL,
-        DEFAULT_RATES
+        currentInterest,
+        currentRates,
+        currentAdvanced
     );
     setResults(res);
 
-  }, [amount, term, frequency, creditType, loanDate, maxAmount, maxTerm]); 
+  }, [amount, term, frequency, creditType, loanDate, maxAmount, maxTerm, currentInterest, currentRates, currentAdvanced, isRatesLoaded]); 
 
   const formatMoney = (val: number) => {
     if (isNaN(val) || val === Infinity) return '0 ₺';
-    return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 2 }).format(val);
+    // Eğer gelişmiş ayarlarda ondalık gösterimi kapalıysa
+    const digits = currentAdvanced.showTableDecimals ? 2 : 0;
+    return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: digits, minimumFractionDigits: digits }).format(val);
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -316,8 +414,6 @@ const KrediHesaplama: React.FC = () => {
     const years = Math.floor(term / 12);
     return `${years} Yıl (${term} Ay)`;
   };
-
-  // --- PDF İÇİN YARDIMCI FONKSİYONLAR ---
 
   const formatMoneyForPDF = (val: number) => {
     return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' TL';
@@ -334,8 +430,6 @@ const KrediHesaplama: React.FC = () => {
       .replace(/₺/g, "TL");
   };
 
-  // --- PDF PAYLAŞIM VE OLUŞTURMA ---
-  
   const handleShare = async () => {
     if (!results) return;
     setIsPdfGenerating(true);
@@ -346,23 +440,19 @@ const KrediHesaplama: React.FC = () => {
 
       const doc = new jsPDF();
 
-      // 1. Kurum Başlığı
       doc.setFont("helvetica", "bold");
       doc.setFontSize(14);
       doc.setTextColor(22, 163, 74); // Emerald Green
       doc.text(normalizeForPDF("S.S. NILUFER ILCESI ESNAF VE SANATKARLAR"), 105, 20, { align: 'center' });
       doc.text(normalizeForPDF("KREDI VE KEFALET KOOPERATIFI"), 105, 26, { align: 'center' });
 
-      // 2. Alt Başlık
       doc.setFontSize(12);
       doc.setTextColor(50, 50, 50); 
       doc.text(normalizeForPDF("KREDI ODEME PLANI"), 105, 36, { align: 'center' });
 
-      // 3. Çizgi
       doc.setDrawColor(200, 200, 200);
       doc.line(20, 40, 190, 40);
 
-      // 4. Özet Bilgiler Kutusu
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
       
@@ -384,7 +474,7 @@ const KrediHesaplama: React.FC = () => {
           formatMoneyForPDF(row.total)
       ]);
 
-      // @ts-ignore - autoTable types
+      // @ts-ignore
       autoTable(doc, {
           head: [tableColumn.map(normalizeForPDF)],
           body: tableRows,
@@ -425,33 +515,28 @@ const KrediHesaplama: React.FC = () => {
           }
       });
 
-      // 6. KESİNTİLER VE NET TUTAR TABLOSU (YATAY TASARIM)
-      
       // @ts-ignore
       let finalY = doc.lastAutoTable.finalY + 10;
       
-      // Sayfa sonu kontrolü
       if (finalY > 250) {
         doc.addPage();
         finalY = 20;
       }
 
-      // Başlık
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(50, 50, 50);
       doc.text(normalizeForPDF("KESINTI DETAYLARI"), 14, finalY);
       
-      // 1. Yatay Kesinti Tablosu
       // @ts-ignore
       autoTable(doc, {
           startY: finalY + 2,
           head: [[
-              normalizeForPDF("Pesin Masraf\n(%1.50)"),
-              normalizeForPDF("Bloke Sermaye\n(%2.00)"),
-              normalizeForPDF("Risk Sermayesi\n(%1.00)"),
-              normalizeForPDF("TESKOMB Payi\n(%0.25)"),
-              normalizeForPDF("Bolge Birligi\n(%0.25)")
+              normalizeForPDF(`Pesin Masraf\n(%${currentRates.pesinMasraf})`),
+              normalizeForPDF(`Bloke Sermaye\n(%${currentRates.blokeSermaye})`),
+              normalizeForPDF(`Risk Sermayesi\n(%${currentRates.riskSermayesi})`),
+              normalizeForPDF(`TESKOMB Payi\n(%${currentRates.teskomb})`),
+              normalizeForPDF(`Bolge Birligi\n(%${currentRates.bolgeBirligi})`)
           ]],
           body: [[
               formatMoneyForPDF(results.deductions.pesinMasraf),
@@ -462,10 +547,10 @@ const KrediHesaplama: React.FC = () => {
           ]],
           theme: 'grid',
           styles: { 
-              font: "helvetica",
+              font: "helvetica", 
               fontSize: 8,
               cellPadding: 3,
-              halign: 'center', // Değerleri ortala
+              halign: 'center', 
               valign: 'middle'
           },
           headStyles: { 
@@ -480,18 +565,16 @@ const KrediHesaplama: React.FC = () => {
           }
       });
 
-      // 2. Net Toplamlar (Hemen altına, sağa yaslı bir özet gibi)
       // @ts-ignore
       const summaryY = doc.lastAutoTable.finalY + 5;
 
-      // Temiz görünüm için 'plain' tema kullanan küçük bir tablo
       // @ts-ignore
       autoTable(doc, {
           startY: summaryY,
           body: [[
               normalizeForPDF("TOPLAM KESINTI"), 
               formatMoneyForPDF(results.deductions.totalDeductions),
-              "", // Boşluk
+              "", 
               normalizeForPDF("NET ELE GECEN TUTAR"), 
               formatMoneyForPDF(results.netAmount)
           ]],
@@ -505,13 +588,12 @@ const KrediHesaplama: React.FC = () => {
           columnStyles: {
               0: { fontStyle: 'bold', halign: 'right', cellWidth: 40, textColor: [100, 100, 100] },
               1: { fontStyle: 'bold', halign: 'left', cellWidth: 40 },
-              2: { cellWidth: 10 }, // Spacer
+              2: { cellWidth: 10 },
               3: { fontStyle: 'bold', halign: 'right', cellWidth: 50, textColor: [22, 163, 74] },
               4: { fontStyle: 'bold', halign: 'left', fontSize: 12, textColor: [22, 163, 74] }
           }
       });
 
-      // 7. Footer / Dipnot (Her Sayfaya)
       const pageCount = doc.getNumberOfPages();
       for(let i = 1; i <= pageCount; i++) {
           doc.setPage(i);
@@ -520,7 +602,6 @@ const KrediHesaplama: React.FC = () => {
           doc.text(normalizeForPDF("Bu belge bilgilendirme amaclidir. Resmi nitelik tasimaz."), 105, 290, { align: 'center' });
       }
 
-      // PDF Oluştur
       const pdfBlob = doc.output('blob');
       const fileName = `odeme_plani_${amount}.pdf`;
       const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
@@ -548,345 +629,347 @@ const KrediHesaplama: React.FC = () => {
     }
   };
 
+  // Handle Print... (Existing implementation)
   const handlePrint = () => {
-    if (!results) return;
-    
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.width = '0px';
-    iframe.style.height = '0px';
-    iframe.style.border = 'none';
-    document.body.appendChild(iframe);
+      if (!results) return;
+      
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'absolute';
+      iframe.style.width = '0px';
+      iframe.style.height = '0px';
+      iframe.style.border = 'none';
+      document.body.appendChild(iframe);
 
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Kredi Ödeme Planı - S.S. Nilüfer EKK</title>
-          <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-            
-            body { 
-              font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-              padding: 40px; 
-              color: #1e293b; /* slate-800 */
-              -webkit-print-color-adjust: exact; 
-              print-color-adjust: exact;
-            }
-            
-            .header {
-              text-align: center;
-              margin-bottom: 30px;
-              border-bottom: 2px solid #e2e8f0; /* slate-200 */
-              padding-bottom: 20px;
-            }
-            
-            .org-name {
-              font-size: 18px;
-              font-weight: 700;
-              color: #059669; /* emerald-600 */
-              margin-bottom: 5px;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-            }
-            
-            h2 { 
-              font-size: 24px;
-              color: #0f172a; /* slate-900 */
-              margin: 10px 0;
-            }
-            
-            .meta-info {
-              font-size: 12px;
-              color: #64748b; /* slate-500 */
-              margin-top: 5px;
-            }
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Kredi Ödeme Planı - S.S. Nilüfer EKK</title>
+            <style>
+              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+              
+              body { 
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+                padding: 40px; 
+                color: #1e293b; /* slate-800 */
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact;
+              }
+              
+              .header {
+                text-align: center;
+                margin-bottom: 30px;
+                border-bottom: 2px solid #e2e8f0; /* slate-200 */
+                padding-bottom: 20px;
+              }
+              
+              .org-name {
+                font-size: 18px;
+                font-weight: 700;
+                color: #059669; /* emerald-600 */
+                margin-bottom: 5px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+              }
+              
+              h2 { 
+                font-size: 24px;
+                color: #0f172a; /* slate-900 */
+                margin: 10px 0;
+              }
+              
+              .meta-info {
+                font-size: 12px;
+                color: #64748b; /* slate-500 */
+                margin-top: 5px;
+              }
 
-            .summary-grid {
-              display: grid;
-              grid-template-columns: repeat(3, 1fr);
-              gap: 15px;
-              margin-bottom: 30px;
-              background-color: #f8fafc; /* slate-50 */
-              border: 1px solid #e2e8f0; /* slate-200 */
-              border-radius: 8px;
-              padding: 20px;
-            }
-            
-            .summary-item {
-              display: flex;
-              flex-direction: column;
-            }
-            
-            .summary-label {
-              font-size: 11px;
-              text-transform: uppercase;
-              color: #64748b; /* slate-500 */
-              font-weight: 600;
-              margin-bottom: 4px;
-            }
-            
-            .summary-value {
-              font-size: 16px;
-              font-weight: 700;
-              color: #0f172a; /* slate-900 */
-            }
+              .summary-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 15px;
+                margin-bottom: 30px;
+                background-color: #f8fafc; /* slate-50 */
+                border: 1px solid #e2e8f0; /* slate-200 */
+                border-radius: 8px;
+                padding: 20px;
+              }
+              
+              .summary-item {
+                display: flex;
+                flex-direction: column;
+              }
+              
+              .summary-label {
+                font-size: 11px;
+                text-transform: uppercase;
+                color: #64748b; /* slate-500 */
+                font-weight: 600;
+                margin-bottom: 4px;
+              }
+              
+              .summary-value {
+                font-size: 16px;
+                font-weight: 700;
+                color: #0f172a; /* slate-900 */
+              }
 
-            table { 
-              width: 100%; 
-              border-collapse: collapse; 
-              margin-top: 20px; 
-              font-size: 11px; 
-            }
-            
-            th { 
-              background-color: #0f172a; /* slate-900 */
-              color: white;
-              padding: 10px 8px;
-              text-align: right;
-              font-weight: 600;
-              text-transform: uppercase;
-            }
-            
-            th:first-child, th:nth-child(2), th:nth-child(3) {
-              text-align: center;
-            }
-            
-            td { 
-              border-bottom: 1px solid #e2e8f0; /* slate-200 */
-              padding: 8px; 
-              text-align: right;
-              color: #334155; /* slate-700 */
-            }
-            
-            td:first-child, td:nth-child(2), td:nth-child(3) {
-              text-align: center;
-              color: #64748b; /* slate-500 */
-            }
-            
-            tr:nth-child(even) { 
-              background-color: #f8fafc; /* slate-50 */
-            }
-            
-            tr:hover {
-              background-color: #f1f5f9; /* slate-100 */
-            }
-            
-            .total-row {
-              background-color: #e2e8f0 !important; /* slate-200 */
-              font-weight: 700;
-            }
-            
-            .total-row td {
-              border-top: 2px solid #cbd5e1; /* slate-300 */
-              color: #0f172a; /* slate-900 */
-              padding: 12px 8px;
-            }
-            
-            .tfoot-label {
-              text-align: right;
-              padding-right: 20px;
-            }
+              table { 
+                width: 100%; 
+                border-collapse: collapse; 
+                margin-top: 20px; 
+                font-size: 11px; 
+              }
+              
+              th { 
+                background-color: #0f172a; /* slate-900 */
+                color: white;
+                padding: 10px 8px;
+                text-align: right;
+                font-weight: 600;
+                text-transform: uppercase;
+              }
+              
+              th:first-child, th:nth-child(2), th:nth-child(3) {
+                text-align: center;
+              }
+              
+              td { 
+                border-bottom: 1px solid #e2e8f0; /* slate-200 */
+                padding: 8px; 
+                text-align: right;
+                color: #334155; /* slate-700 */
+              }
+              
+              td:first-child, td:nth-child(2), td:nth-child(3) {
+                text-align: center;
+                color: #64748b; /* slate-500 */
+              }
+              
+              tr:nth-child(even) { 
+                background-color: #f8fafc; /* slate-50 */
+              }
+              
+              tr:hover {
+                background-color: #f1f5f9; /* slate-100 */
+              }
+              
+              .total-row {
+                background-color: #e2e8f0 !important; /* slate-200 */
+                font-weight: 700;
+              }
+              
+              .total-row td {
+                border-top: 2px solid #cbd5e1; /* slate-300 */
+                color: #0f172a; /* slate-900 */
+                padding: 12px 8px;
+              }
+              
+              .tfoot-label {
+                text-align: right;
+                padding-right: 20px;
+              }
 
-            /* Footer Kesintiler Bölümü */
-            .footer-summary { 
-              margin-top: 40px; 
-              border: 1px solid #e2e8f0;
-              border-radius: 8px;
-              padding: 0;
-              overflow: hidden;
-              break-inside: avoid;
-            }
-            
-            .footer-header {
-              background-color: #f1f5f9; /* slate-100 */
-              padding: 10px 20px;
-              border-bottom: 1px solid #e2e8f0;
-              font-size: 12px;
-              font-weight: 700;
-              text-transform: uppercase;
-              color: #475569;
-            }
+              /* Footer Kesintiler Bölümü */
+              .footer-summary { 
+                margin-top: 40px; 
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 0;
+                overflow: hidden;
+                break-inside: avoid;
+              }
+              
+              .footer-header {
+                background-color: #f1f5f9; /* slate-100 */
+                padding: 10px 20px;
+                border-bottom: 1px solid #e2e8f0;
+                font-size: 12px;
+                font-weight: 700;
+                text-transform: uppercase;
+                color: #475569;
+              }
 
-            .deduction-row {
-              display: flex;
-              border-bottom: 1px solid #e2e8f0;
-            }
-            
-            .deduction-item {
-              flex: 1;
-              padding: 15px;
-              text-align: center;
-              border-right: 1px solid #e2e8f0;
-            }
-            
-            .deduction-item:last-child {
-              border-right: none;
-            }
-            
-            .deduction-label {
-              font-size: 10px;
-              color: #64748b;
-              margin-bottom: 4px;
-              display: block;
-            }
-            
-            .deduction-value {
-              font-size: 13px;
-              font-weight: 600;
-              color: #334155;
-            }
+              .deduction-row {
+                display: flex;
+                border-bottom: 1px solid #e2e8f0;
+              }
+              
+              .deduction-item {
+                flex: 1;
+                padding: 15px;
+                text-align: center;
+                border-right: 1px solid #e2e8f0;
+              }
+              
+              .deduction-item:last-child {
+                border-right: none;
+              }
+              
+              .deduction-label {
+                font-size: 10px;
+                color: #64748b;
+                margin-bottom: 4px;
+                display: block;
+              }
+              
+              .deduction-value {
+                font-size: 13px;
+                font-weight: 600;
+                color: #334155;
+              }
 
-            .net-total-row {
-              display: flex;
-              justify-content: flex-end;
-              align-items: center;
-              padding: 15px 20px;
-              background-color: #f0fdf4; /* green-50 */
-              gap: 30px;
-            }
-            
-            .total-group {
-              display: flex;
-              flex-direction: column;
-              align-items: flex-end;
-            }
-            
-            .total-label {
-              font-size: 10px;
-              text-transform: uppercase;
-              color: #64748b;
-              margin-bottom: 2px;
-            }
-            
-            .total-value {
-              font-size: 14px;
-              font-weight: 700;
-              color: #334155;
-            }
-            
-            .net-value {
-              font-size: 20px;
-              color: #059669; /* emerald-600 */
-            }
+              .net-total-row {
+                display: flex;
+                justify-content: flex-end;
+                align-items: center;
+                padding: 15px 20px;
+                background-color: #f0fdf4; /* green-50 */
+                gap: 30px;
+              }
+              
+              .total-group {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+              }
+              
+              .total-label {
+                font-size: 10px;
+                text-transform: uppercase;
+                color: #64748b;
+                margin-bottom: 2px;
+              }
+              
+              .total-value {
+                font-size: 14px;
+                font-weight: 700;
+                color: #334155;
+              }
+              
+              .net-value {
+                font-size: 20px;
+                color: #059669; /* emerald-600 */
+              }
 
-            @media print {
-              body { padding: 0; -webkit-print-color-adjust: exact; }
-              .no-print { display: none; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div class="org-name">S. S. Nilüfer İlçesi Esnaf ve Sanatkarlar<br>Kredi ve Kefalet Kooperatifi</div>
-            <h2>Kredi Ödeme Planı</h2>
-            <div class="meta-info">Oluşturulma Tarihi: ${new Date().toLocaleDateString('tr-TR')}</div>
-          </div>
-          
-          <div class="summary-grid">
-            <div class="summary-item">
-              <span class="summary-label">Kredi Tutarı</span>
-              <span class="summary-value" style="color: #059669;">${formatMoney(amount)}</span>
+              @media print {
+                body { padding: 0; -webkit-print-color-adjust: exact; }
+                .no-print { display: none; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <div class="org-name">S. S. Nilüfer İlçesi Esnaf ve Sanatkarlar<br>Kredi ve Kefalet Kooperatifi</div>
+              <h2>Kredi Ödeme Planı</h2>
+              <div class="meta-info">Oluşturulma Tarihi: ${new Date().toLocaleDateString('tr-TR')}</div>
             </div>
-            <div class="summary-item">
-              <span class="summary-label">Vade / Dönem</span>
-              <span class="summary-value">${getVadeText()}</span>
+            
+            <div class="summary-grid">
+              <div class="summary-item">
+                <span class="summary-label">Kredi Tutarı</span>
+                <span class="summary-value" style="color: #059669;">${formatMoney(amount)}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Vade / Dönem</span>
+                <span class="summary-value">${getVadeText()}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Toplam Geri Ödeme</span>
+                <span class="summary-value" style="color: #2563eb;">${formatMoney(results.totals.totalPayment)}</span>
+              </div>
             </div>
-            <div class="summary-item">
-              <span class="summary-label">Toplam Geri Ödeme</span>
-              <span class="summary-value" style="color: #2563eb;">${formatMoney(results.totals.totalPayment)}</span>
-            </div>
-          </div>
 
-          <table>
-            <thead>
-              <tr>
-                <th width="5%">No</th>
-                <th width="12%">Tarih</th>
-                <th width="5%">Gün</th>
-                <th>Anapara</th>
-                <th>Faiz</th>
-                <th>Komisyon</th>
-                <th>Masraf</th>
-                <th>Toplam Taksit</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${results.paymentSchedule.map(row => `
+            <table>
+              <thead>
                 <tr>
-                  <td>${row.installmentNumber}</td>
-                  <td>${row.dueDate}</td>
-                  <td>${row.days}</td>
-                  <td>${formatMoney(row.principal)}</td>
-                  <td>${formatMoney(row.interest)}</td>
-                  <td>${formatMoney(row.commission)}</td>
-                  <td>${formatMoney(row.expense)}</td>
-                  <td style="font-weight: 700; color: #059669;">${formatMoney(row.total)}</td>
+                  <th width="5%">No</th>
+                  <th width="12%">Tarih</th>
+                  <th width="5%">Gün</th>
+                  <th>Anapara</th>
+                  <th>Faiz</th>
+                  <th>Komisyon</th>
+                  <th>Masraf</th>
+                  <th>Toplam Taksit</th>
                 </tr>
-              `).join('')}
-              <tr class="total-row">
-                <td colspan="3" class="tfoot-label">GENEL TOPLAMLAR</td>
-                <td>${formatMoney(results.totals.principal)}</td>
-                <td>${formatMoney(results.totals.interest)}</td>
-                <td>${formatMoney(results.totals.commission)}</td>
-                <td>${formatMoney(results.totals.expense)}</td>
-                <td style="color: #059669;">${formatMoney(results.totals.totalPayment)}</td>
-              </tr>
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                ${results.paymentSchedule.map(row => `
+                  <tr>
+                    <td>${row.installmentNumber}</td>
+                    <td>${row.dueDate}</td>
+                    <td>${row.days}</td>
+                    <td>${formatMoney(row.principal)}</td>
+                    <td>${formatMoney(row.interest)}</td>
+                    <td>${formatMoney(row.commission)}</td>
+                    <td>${formatMoney(row.expense)}</td>
+                    <td style="font-weight: 700; color: #059669;">${formatMoney(row.total)}</td>
+                  </tr>
+                `).join('')}
+                <tr class="total-row">
+                  <td colspan="3" class="tfoot-label">GENEL TOPLAMLAR</td>
+                  <td>${formatMoney(results.totals.principal)}</td>
+                  <td>${formatMoney(results.totals.interest)}</td>
+                  <td>${formatMoney(results.totals.commission)}</td>
+                  <td>${formatMoney(results.totals.expense)}</td>
+                  <td style="color: #059669;">${formatMoney(results.totals.totalPayment)}</td>
+                </tr>
+              </tbody>
+            </table>
 
-          <div class="footer-summary">
-            <div class="footer-header">Kesinti Detayları</div>
-            <div class="deduction-row">
-               <div class="deduction-item">
-                  <span class="deduction-label">Peşin Masraf (%1.50)</span>
-                  <span class="deduction-value">${formatMoney(results.deductions.pesinMasraf)}</span>
-               </div>
-               <div class="deduction-item">
-                  <span class="deduction-label">Bloke Sermaye (%2.00)</span>
-                  <span class="deduction-value">${formatMoney(results.deductions.blokeSermaye)}</span>
-               </div>
-               <div class="deduction-item">
-                  <span class="deduction-label">Risk Sermayesi (%1.00)</span>
-                  <span class="deduction-value">${formatMoney(results.deductions.riskSermayesi)}</span>
-               </div>
-               <div class="deduction-item">
-                  <span class="deduction-label">TESKOMB Payı (%0.25)</span>
-                  <span class="deduction-value">${formatMoney(results.deductions.teskomb)}</span>
-               </div>
-               <div class="deduction-item">
-                  <span class="deduction-label">Bölge Birliği (%0.25)</span>
-                  <span class="deduction-value">${formatMoney(results.deductions.bolgeBirligi)}</span>
-               </div>
+            <div class="footer-summary">
+              <div class="footer-header">Kesinti Detayları</div>
+              <div class="deduction-row">
+                 <div class="deduction-item">
+                    <span class="deduction-label">Peşin Masraf (%${currentRates.pesinMasraf})</span>
+                    <span class="deduction-value">${formatMoney(results.deductions.pesinMasraf)}</span>
+                 </div>
+                 <div class="deduction-item">
+                    <span class="deduction-label">Bloke Sermaye (%${currentRates.blokeSermaye})</span>
+                    <span class="deduction-value">${formatMoney(results.deductions.blokeSermaye)}</span>
+                 </div>
+                 <div class="deduction-item">
+                    <span class="deduction-label">Risk Sermayesi (%${currentRates.riskSermayesi})</span>
+                    <span class="deduction-value">${formatMoney(results.deductions.riskSermayesi)}</span>
+                 </div>
+                 <div class="deduction-item">
+                    <span class="deduction-label">TESKOMB Payı (%${currentRates.teskomb})</span>
+                    <span class="deduction-value">${formatMoney(results.deductions.teskomb)}</span>
+                 </div>
+                 <div class="deduction-item">
+                    <span class="deduction-label">Bölge Birliği (%${currentRates.bolgeBirligi})</span>
+                    <span class="deduction-value">${formatMoney(results.deductions.bolgeBirligi)}</span>
+                 </div>
+              </div>
+
+              <div class="net-total-row">
+                 <div class="total-group">
+                    <span class="total-label">Toplam Kesinti</span>
+                    <span class="total-value" style="color: #dc2626;">- ${formatMoney(results.deductions.totalDeductions)}</span>
+                 </div>
+                 <div class="total-group">
+                    <span class="total-label">Ele Geçen Net Tutar</span>
+                    <span class="total-value net-value">${formatMoney(results.netAmount)}</span>
+                 </div>
+              </div>
             </div>
 
-            <div class="net-total-row">
-               <div class="total-group">
-                  <span class="total-label">Toplam Kesinti</span>
-                  <span class="total-value" style="color: #dc2626;">- ${formatMoney(results.deductions.totalDeductions)}</span>
-               </div>
-               <div class="total-group">
-                  <span class="total-label">Ele Geçen Net Tutar</span>
-                  <span class="total-value net-value">${formatMoney(results.netAmount)}</span>
-               </div>
-            </div>
-          </div>
+            <script>
+              window.onload = function() { window.print(); }
+            </script>
+          </body>
+        </html>
+      `;
 
-          <script>
-            window.onload = function() { window.print(); }
-          </script>
-        </body>
-      </html>
-    `;
-
-    const doc = iframe.contentWindow?.document;
-    if (doc) {
-      doc.open();
-      doc.write(htmlContent);
-      doc.close();
-    }
+      const doc = iframe.contentWindow?.document;
+      if (doc) {
+        doc.open();
+        doc.write(htmlContent);
+        doc.close();
+      }
   };
 
+  // ... Render UI ...
   return (
     <div className="min-h-screen bg-[#0f172a] font-sans text-gray-100 flex flex-col">
       <Navbar />
@@ -898,6 +981,7 @@ const KrediHesaplama: React.FC = () => {
         </div>
 
         <div className="relative z-10 pt-28 pb-12 lg:pt-40 lg:pb-16 text-center">
+            {/* ... Header Content ... */}
             <div className="container mx-auto px-4">
                 <div className="inline-flex items-center justify-center space-x-3 mb-4 opacity-90">
                     <div className="h-px w-8 bg-gradient-to-r from-transparent to-emerald-400"></div>
@@ -916,6 +1000,7 @@ const KrediHesaplama: React.FC = () => {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
             <div className="grid lg:grid-cols-12 gap-8">
                 
+                {/* SOL PANEL (AYARLAR) */}
                 <div className="lg:col-span-5 space-y-6">
                     <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-blue-500 to-emerald-500"></div>
@@ -925,15 +1010,23 @@ const KrediHesaplama: React.FC = () => {
                             Kredi Ayarları
                         </h3>
                         
+                        {/* Kredi Türü Seçimi */}
                         <div className="mb-6">
                             <label className="text-sm font-medium text-slate-300 mb-3 block">Kredi Türü</label>
                             <div className="grid grid-cols-3 gap-2">
-                                <button onClick={() => setCreditType('business')} className={`py-3 rounded-xl text-xs font-bold border flex flex-col items-center gap-1 ${creditType === 'business' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'}`}><Briefcase size={16} /> İşletme</button>
-                                <button onClick={() => setCreditType('building')} className={`py-3 rounded-xl text-xs font-bold border flex flex-col items-center gap-1 ${creditType === 'building' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'}`}><Building2 size={16} /> İşyeri</button>
-                                <button onClick={() => setCreditType('vehicle')} className={`py-3 rounded-xl text-xs font-bold border flex flex-col items-center gap-1 ${creditType === 'vehicle' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'}`}><Truck size={16} /> Taşıt</button>
+                                {visibility.business && (
+                                    <button onClick={() => setCreditType('business')} className={`py-3 rounded-xl text-xs font-bold border flex flex-col items-center gap-1 ${creditType === 'business' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'}`}><Briefcase size={16} /> İşletme</button>
+                                )}
+                                {visibility.building && (
+                                    <button onClick={() => setCreditType('building')} className={`py-3 rounded-xl text-xs font-bold border flex flex-col items-center gap-1 ${creditType === 'building' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'}`}><Building2 size={16} /> İşyeri</button>
+                                )}
+                                {visibility.vehicle && (
+                                    <button onClick={() => setCreditType('vehicle')} className={`py-3 rounded-xl text-xs font-bold border flex flex-col items-center gap-1 ${creditType === 'vehicle' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'}`}><Truck size={16} /> Taşıt</button>
+                                )}
                             </div>
                         </div>
 
+                        {/* Tutar ve Tarih */}
                         <div className="grid grid-cols-2 gap-4 mb-6">
                             <div>
                                 <label className="text-sm font-medium text-slate-300 mb-2 block">Kredi Tutarı</label>
@@ -950,6 +1043,7 @@ const KrediHesaplama: React.FC = () => {
                         
                         <input type="range" min={0} max={maxAmount} step={rangeStep} value={amount} onChange={(e) => setAmount(Number(e.target.value))} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 mb-6" />
 
+                        {/* Vade */}
                         <div className="mb-6">
                             <div className="flex justify-between mb-2">
                                 <label className="text-sm font-medium text-slate-300">Vade</label>
@@ -958,6 +1052,7 @@ const KrediHesaplama: React.FC = () => {
                             <input type="range" min={MIN_TERM} max={maxTerm} step={YEARLY_STEP} value={term} onChange={(e) => setTerm(Number(e.target.value))} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500" />
                         </div>
 
+                        {/* Ödeme Sıklığı */}
                         <div className="mb-2">
                             <label className="text-sm font-medium text-slate-300 mb-3 block">Ödeme Sıklığı</label>
                             <div className="grid grid-cols-3 gap-3">
@@ -974,6 +1069,7 @@ const KrediHesaplama: React.FC = () => {
                     </div>
                 </div>
 
+                {/* SAĞ PANEL (SONUÇLAR) */}
                 <div className="lg:col-span-7 space-y-6">
                     {results && (
                         <>
@@ -1000,11 +1096,11 @@ const KrediHesaplama: React.FC = () => {
                                     <PieChart className="w-4 h-4 text-slate-400" /> Peşin Kesinti Dökümü
                                 </h4>
                                 <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-                                    <div className="flex justify-between text-xs"><span className="text-slate-400">Peşin Masraf (%{DEFAULT_RATES.pesinMasraf})</span> <span className="text-slate-200">{formatMoney(results.deductions.pesinMasraf)}</span></div>
-                                    <div className="flex justify-between text-xs"><span className="text-slate-400">Bloke Sermaye (%{DEFAULT_RATES.blokeSermaye})</span> <span className="text-slate-200">{formatMoney(results.deductions.blokeSermaye)}</span></div>
-                                    <div className="flex justify-between text-xs"><span className="text-slate-400">Risk Sermayesi (%{DEFAULT_RATES.riskSermayesi})</span> <span className="text-slate-200">{formatMoney(results.deductions.riskSermayesi)}</span></div>
-                                    <div className="flex justify-between text-xs"><span className="text-slate-400">TESKOMB Payı (%{DEFAULT_RATES.teskomb})</span> <span className="text-slate-200">{formatMoney(results.deductions.teskomb)}</span></div>
-                                    <div className="flex justify-between text-xs col-span-2 border-t border-slate-700/50 pt-2 mt-1"><span className="text-slate-400">Bölge Birliği (%{DEFAULT_RATES.bolgeBirligi})</span> <span className="text-slate-200">{formatMoney(results.deductions.bolgeBirligi)}</span></div>
+                                    <div className="flex justify-between text-xs"><span className="text-slate-400">Peşin Masraf (%{currentRates.pesinMasraf})</span> <span className="text-slate-200">{formatMoney(results.deductions.pesinMasraf)}</span></div>
+                                    <div className="flex justify-between text-xs"><span className="text-slate-400">Bloke Sermaye (%{currentRates.blokeSermaye})</span> <span className="text-slate-200">{formatMoney(results.deductions.blokeSermaye)}</span></div>
+                                    <div className="flex justify-between text-xs"><span className="text-slate-400">Risk Sermayesi (%{currentRates.riskSermayesi})</span> <span className="text-slate-200">{formatMoney(results.deductions.riskSermayesi)}</span></div>
+                                    <div className="flex justify-between text-xs"><span className="text-slate-400">TESKOMB Payı (%{currentRates.teskomb})</span> <span className="text-slate-200">{formatMoney(results.deductions.teskomb)}</span></div>
+                                    <div className="flex justify-between text-xs col-span-2 border-t border-slate-700/50 pt-2 mt-1"><span className="text-slate-400">Bölge Birliği (%{currentRates.bolgeBirligi})</span> <span className="text-slate-200">{formatMoney(results.deductions.bolgeBirligi)}</span></div>
                                     <div className="flex justify-between text-sm font-bold col-span-2 text-red-400"><span className="">Toplam Kesinti</span> <span>- {formatMoney(results.deductions.totalDeductions)}</span></div>
                                 </div>
                             </div>

@@ -14,7 +14,10 @@ import {
   ChevronDown,
   FileText,
   Menu,
-  X
+  X,
+  Globe,
+  Calculator,
+  CreditCard
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -80,6 +83,40 @@ export default function DashboardClient() {
             <FileText size={20} />
             Sayfalar
           </Link>
+
+          {/* --- ONLINE İŞLEMLER MENÜSÜ (GÜNCELLENDİ) --- */}
+          <details className="group/online select-none"> 
+            <summary className="px-4 py-3 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl flex items-center gap-3 font-medium cursor-pointer transition-colors list-none">
+              <Globe size={20} />
+              <span>Online İşlemler</span>
+              <ChevronDown size={16} className="ml-auto transition-transform duration-200 group-open/online:rotate-180 opacity-50" />
+            </summary>
+            
+            <div className="pl-4 mt-1 space-y-1 border-l border-slate-800 ml-6">
+              {/* Link güncellendi: Artık admin düzenleme sayfasına gidiyor */}
+              <Link 
+                href="/admin/sayfalar/kredi-hesaplama" 
+                onClick={() => setIsSidebarOpen(false)}
+                className="px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-lg flex items-center gap-2 transition-colors"
+              >
+                 <Calculator size={16} />
+                 Kredi Hesaplama
+              </Link>
+              
+              {/* Limit sorgulama için şimdilik placeholder veya public link kalabilir, 
+                  sonraki adımda bunu da admin paneline çekebiliriz */}
+              <Link 
+                href="/limit-sorgulama" 
+                target="_blank"
+                onClick={() => setIsSidebarOpen(false)}
+                className="px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-lg flex items-center gap-2 transition-colors"
+              >
+                 <CreditCard size={16} />
+                 Limit Sorgulama
+              </Link>
+            </div>
+          </details>
+          {/* ------------------------------------------- */}
 
           <details className="group/kadro select-none"> 
             <summary className="px-4 py-3 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl flex items-center gap-3 font-medium cursor-pointer transition-colors list-none">
