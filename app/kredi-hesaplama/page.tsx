@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navbar from '@/components/Navbar'; 
 import Footer from '@/components/Footer'; 
 import { Calculator, RefreshCcw, Wallet, PieChart, TrendingUp, Info, Table2, Briefcase, Building2, Truck, ChevronDown, ChevronUp, Share2, Printer, Loader2 } from 'lucide-react';
@@ -294,6 +294,9 @@ const KrediHesaplama: React.FC = () => {
   const [showSchedule, setShowSchedule] = useState(false);
   const [user, setUser] = useState<any>(null);
 
+  // Ref ve Scroll İşlemi için
+  const scheduleRef = useRef<HTMLDivElement>(null);
+
   const maxAmount = creditType === 'business' ? currentLimits.business 
                   : creditType === 'building' ? currentLimits.building 
                   : currentLimits.vehicle;
@@ -304,9 +307,18 @@ const KrediHesaplama: React.FC = () => {
 
   const rangeStep = creditType === 'business' ? 5000 : 25000; 
 
+  // Sayfa Başlığını Ayarla
   useEffect(() => {
     document.title = "Kredi Hesaplama | ESKKK";
   }, []);
+
+  // Hesaplama parametreleri değiştiğinde ödeme planını kapat
+  useEffect(() => {
+    if (isRatesLoaded) {
+        setShowSchedule(false);
+    }
+  }, [amount, term, frequency, creditType, loanDate]);
+
 
   useEffect(() => {
     if (!auth || !db) {
@@ -407,7 +419,7 @@ const KrediHesaplama: React.FC = () => {
     return `${years} Yıl (${term} Ay)`;
   };
 
-  // ⭐️ PDF OLUŞTURMA FONKSİYONU (TÜRKÇE KARAKTER DESTEĞİ)
+  // PDF OLUŞTURMA FONKSİYONU (TÜRKÇE KARAKTER DESTEĞİ)
   const generatePDF = async () => {
     if (!results) return null;
 
@@ -494,13 +506,11 @@ const KrediHesaplama: React.FC = () => {
         footStyles: { fillColor: [240, 240, 240], textColor: 0 }
     });
 
-    // --- ⭐️ YENİ: KESİNTİLER TABLOSU (YAN YANA) ---
+    // --- KESİNTİLER TABLOSU (YAN YANA) ---
     const finalY = (doc as any).lastAutoTable.finalY || 150;
     
-    // Sayfa sonuna yaklaştıysa yeni sayfa aç
     if (finalY > 250) {
         doc.addPage();
-        // Yeni sayfada başlık hizası için Y'yi sıfırla (veya uygun bir değere ayarla)
     }
     
     const startYSummary = finalY > 250 ? 20 : finalY + 15;
@@ -588,21 +598,18 @@ const KrediHesaplama: React.FC = () => {
     }
   };
 
-  // ⭐️ YAZDIR BUTONU (SİTE İÇERİSİNDE IFRAME İLE)
+  // YAZDIR BUTONU (SİTE İÇERİSİNDE IFRAME İLE)
   const handlePrint = async () => {
      if (!results) return;
      setIsPdfGenerating(true);
      try {
          const doc = await generatePDF();
          if (doc) {
-             // PDF'e otomatik yazdırma scripti ekle
              doc.autoPrint();
              
-             // Blob URL oluştur
              const blob = doc.output('blob');
              const blobUrl = URL.createObjectURL(blob);
              
-             // Gizli iframe oluştur (Sitede arka planda açılacak)
              const iframe = document.createElement('iframe');
              iframe.style.position = 'fixed';
              iframe.style.width = '0px';
@@ -612,19 +619,58 @@ const KrediHesaplama: React.FC = () => {
              
              document.body.appendChild(iframe);
              
-             // İframe yüklenince yazdırmayı tetikle
              iframe.onload = () => {
                  if (iframe.contentWindow) {
                      iframe.contentWindow.print();
                  }
+                 // Yazdırma işlemi bittikten veya iptal edildikten sonra iframe'i kaldır
+                 setTimeout(() => {
+                    document.body.removeChild(iframe);
+                    URL.revokeObjectURL(blobUrl);
+                 }, 1000); 
              };
+
+             // Bir hata oluşursa veya kullanıcı kapatırsa bile 10 saniye sonra iframe'i kaldır
+             setTimeout(() => {
+                if (document.body.contains(iframe)) {
+                   document.body.removeChild(iframe);
+                   URL.revokeObjectURL(blobUrl);
+                }
+             }, 10000);
          }
      } catch (error) {
          console.error("Yazdırma hatası:", error);
-         alert("Yazdırma işlemi başlatılamadı.");
      } finally {
          setIsPdfGenerating(false);
      }
+  };
+
+  // Toggle fonksiyonunu güncelleyelim.
+  const handleToggleSchedule = () => {
+    const newState = !showSchedule;
+    setShowSchedule(newState);
+
+    // Eğer yeni durum açıksa, kaydırma yap
+    if (newState) {
+      // 200ms gecikme (animasyonun başlamasını ve DOM'un yerleşmesini bekler)
+      setTimeout(() => {
+        const element = document.getElementById('payment-schedule-container');
+        if (element) {
+          // Navbar'ın h-28 (yaklaşık 112px) olduğunu varsayarak 128px boşluk bırakıyoruz.
+          const NAVBAR_HEIGHT = 128; 
+          
+          // Elementin ekranın tepesine olan uzaklığı + mevcut kaydırma konumu
+          const elementPosition = element.getBoundingClientRect().top + window.scrollY;
+          
+          // Hedef kaydırma konumu: Elementin başlangıcı - Navbar yüksekliği
+          // Bu sayede başlık, Navbar'ın hemen altında görünecektir.
+          window.scrollTo({
+            top: elementPosition - NAVBAR_HEIGHT,
+            behavior: 'smooth'
+          });
+        }
+      }, 200); 
+    }
   };
 
   return (
@@ -688,6 +734,7 @@ const KrediHesaplama: React.FC = () => {
                             <div>
                                 <label className="text-sm font-medium text-foreground/80 mb-2 block">Kredi Tutarı</label>
                                 <div className="relative">
+                                    {/* OnChange event'ine eklenen setAmount zaten showSchedule(false) tetikleyecek */}
                                     <input type="text" value={new Intl.NumberFormat('tr-TR').format(amount)} onChange={handleAmountChange} className="w-full bg-background/50 border border-foreground/20 rounded-lg px-3 py-2 text-sm font-bold text-accent text-right focus:outline-none focus:border-accent" />
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/50 text-xs">₺</span>
                                 </div>
@@ -698,6 +745,7 @@ const KrediHesaplama: React.FC = () => {
                             </div>
                         </div>
                         
+                        {/* OnChange event'ine eklenen setAmount zaten showSchedule(false) tetikleyecek */}
                         <input type="range" min={0} max={maxAmount} step={rangeStep} value={amount} onChange={(e) => setAmount(Number(e.target.value))} className="w-full h-2 bg-foreground/20 rounded-lg appearance-none cursor-pointer accent-accent mb-6" />
 
                         {/* Vade */}
@@ -706,6 +754,7 @@ const KrediHesaplama: React.FC = () => {
                                 <label className="text-sm font-medium text-foreground/80">Vade</label>
                                 <span className="text-sm font-bold text-primary">{getVadeText()}</span>
                             </div>
+                            {/* OnChange event'ine eklenen setTerm zaten showSchedule(false) tetikleyecek */}
                             <input type="range" min={MIN_TERM} max={maxTerm} step={YEARLY_STEP} value={term} onChange={(e) => setTerm(Number(e.target.value))} className="w-full h-2 bg-foreground/20 rounded-lg appearance-none cursor-pointer accent-primary" />
                         </div>
 
@@ -714,6 +763,7 @@ const KrediHesaplama: React.FC = () => {
                             <label className="text-sm font-medium text-foreground/80 mb-3 block">Ödeme Sıklığı</label>
                             <div className="grid grid-cols-3 gap-3">
                                 {[1, 3, 6].map((val) => (
+                                    // setFrequency çağrısı showSchedule(false) tetikleyecek
                                     <button key={val} onClick={() => setFrequency(val)} className={`py-2 rounded-xl text-sm font-bold border ${frequency === val ? 'bg-accent border-accent text-background' : 'bg-background border-foreground/10 text-foreground/60'}`}>{val === 1 ? 'Aylık' : `${val} Aylık`}</button>
                                 ))}
                             </div>
@@ -776,7 +826,7 @@ const KrediHesaplama: React.FC = () => {
                             </div>
 
                             <button 
-                                onClick={() => setShowSchedule(!showSchedule)}
+                                onClick={handleToggleSchedule}
                                 className="w-full py-3 bg-foreground/10 hover:bg-foreground/20 text-foreground rounded-xl font-bold transition-colors flex items-center justify-center gap-2 shadow-lg"
                             >
                                 <Table2 size={18} />
@@ -788,74 +838,84 @@ const KrediHesaplama: React.FC = () => {
                 </div>
             </div>
 
-            {showSchedule && results && (
-                <div className="mt-8 bg-foreground/5 border border-foreground/10 rounded-3xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="p-6 border-b border-foreground/10 flex flex-col sm:flex-row justify-between items-center bg-background/50 gap-4">
-                        <h3 className="text-xl font-bold text-foreground">Ödeme Planı</h3>
-                        
-                        {/* PAYLAŞ VE YAZDIR BUTONLARI */}
-                        <div className="flex gap-3">
-                            <button 
-                                onClick={handlePrint}
-                                disabled={isPdfGenerating}
-                                className="flex items-center gap-2 px-4 py-2 bg-foreground/10 hover:bg-foreground/20 text-foreground rounded-lg font-medium transition-colors text-sm disabled:opacity-70"
-                            >
-                                {isPdfGenerating ? <Loader2 className="animate-spin w-4 h-4" /> : <Printer size={16} />}
-                                <span className="hidden sm:inline">Yazdır</span>
-                            </button>
+            {/* Animasyonlu Wrapper */}
+            <div 
+                ref={scheduleRef}
+                id="payment-schedule-container" // Kaydırma hedefi için ID eklendi
+                // scroll-mt-[128px] sınıfı, kaydırma boşluğunu sağlar.
+                className={`transition-all duration-700 ease-in-out overflow-hidden scroll-mt-[128px] ${
+                    showSchedule && results ? 'max-h-[5000px] opacity-100 mt-8' : 'max-h-0 opacity-0 mt-0'
+                }`}
+            >
+                {results && (
+                    <div className="bg-foreground/5 border border-foreground/10 rounded-3xl overflow-hidden shadow-2xl">
+                        <div className="p-6 border-b border-foreground/10 flex flex-col sm:flex-row justify-between items-center bg-background/50 gap-4">
+                            <h3 className="text-xl font-bold text-foreground">Ödeme Planı</h3>
                             
-                            <button 
-                                onClick={handleShare}
-                                disabled={isPdfGenerating}
-                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg font-bold transition-all shadow-lg shadow-primary/20 hover:shadow-primary/30 text-sm disabled:opacity-70 disabled:cursor-not-allowed"
-                            >
-                                {isPdfGenerating ? <Loader2 className="animate-spin w-4 h-4" /> : <Share2 size={16} />}
-                                <span>Paylaş</span>
-                            </button>
+                            {/* PAYLAŞ VE YAZDIR BUTONLARI */}
+                            <div className="flex gap-3">
+                                <button 
+                                    onClick={handlePrint}
+                                    disabled={isPdfGenerating}
+                                    className="flex items-center gap-2 px-4 py-2 bg-foreground/10 hover:bg-foreground/20 text-foreground rounded-lg font-medium transition-colors text-sm disabled:opacity-70"
+                                >
+                                    {isPdfGenerating ? <Loader2 className="animate-spin w-4 h-4" /> : <Printer size={16} />}
+                                    <span className="hidden sm:inline">Yazdır</span>
+                                </button>
+                                
+                                <button 
+                                    onClick={handleShare}
+                                    disabled={isPdfGenerating}
+                                    className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg font-bold transition-all shadow-lg shadow-primary/20 hover:shadow-primary/30 text-sm disabled:opacity-70 disabled:cursor-not-allowed"
+                                >
+                                    {isPdfGenerating ? <Loader2 className="animate-spin w-4 h-4" /> : <Share2 size={16} />}
+                                    <span>Paylaş</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm text-foreground/70">
+                                <thead className="bg-background text-xs uppercase font-bold text-foreground/50">
+                                    <tr>
+                                        <th className="px-4 py-3">Taksit</th>
+                                        <th className="px-4 py-3">Tarih</th>
+                                        <th className="px-4 py-3">Gün</th>
+                                        <th className="px-4 py-3 text-right">Anapara</th>
+                                        <th className="px-4 py-3 text-right">Faiz</th>
+                                        <th className="px-4 py-3 text-right">Komisyon</th>
+                                        <th className="px-4 py-3 text-right">Masraf</th>
+                                        <th className="px-4 py-3 text-right text-foreground">Toplam Taksit</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-foreground/10">
+                                    {results.paymentSchedule.map((row) => (
+                                        <tr key={row.installmentNumber} className="hover:bg-foreground/5 transition-colors">
+                                            <td className="px-4 py-3 font-medium text-foreground">{row.installmentNumber}</td>
+                                            <td className="px-4 py-3">{row.dueDate}</td>
+                                            <td className="px-4 py-3">{row.days}</td>
+                                            <td className="px-4 py-3 text-right">{formatMoney(row.principal)}</td>
+                                            <td className="px-4 py-3 text-right">{formatMoney(row.interest)}</td>
+                                            <td className="px-4 py-3 text-right">{formatMoney(row.commission)}</td>
+                                            <td className="px-4 py-3 text-right">{formatMoney(row.expense)}</td>
+                                            <td className="px-4 py-3 text-right font-bold text-accent">{formatMoney(row.total)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                                <tfoot className="bg-background/80 font-bold text-foreground border-t border-foreground/20">
+                                    <tr>
+                                        <td colSpan={3} className="px-4 py-3 text-right uppercase">Toplamlar</td>
+                                        <td className="px-4 py-3 text-right">{formatMoney(results.totals.principal)}</td>
+                                        <td className="px-4 py-3 text-right">{formatMoney(results.totals.interest)}</td>
+                                        <td className="px-4 py-3 text-right">{formatMoney(results.totals.commission)}</td>
+                                        <td className="px-4 py-3 text-right">{formatMoney(results.totals.expense)}</td>
+                                        <td className="px-4 py-3 text-right text-accent">{formatMoney(results.totals.totalPayment)}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
                         </div>
                     </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm text-foreground/70">
-                            <thead className="bg-background text-xs uppercase font-bold text-foreground/50">
-                                <tr>
-                                    <th className="px-4 py-3">Taksit</th>
-                                    <th className="px-4 py-3">Tarih</th>
-                                    <th className="px-4 py-3">Gün</th>
-                                    <th className="px-4 py-3 text-right">Anapara</th>
-                                    <th className="px-4 py-3 text-right">Faiz</th>
-                                    <th className="px-4 py-3 text-right">Komisyon</th>
-                                    <th className="px-4 py-3 text-right">Masraf</th>
-                                    <th className="px-4 py-3 text-right text-foreground">Toplam Taksit</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-foreground/10">
-                                {results.paymentSchedule.map((row) => (
-                                    <tr key={row.installmentNumber} className="hover:bg-foreground/5 transition-colors">
-                                        <td className="px-4 py-3 font-medium text-foreground">{row.installmentNumber}</td>
-                                        <td className="px-4 py-3">{row.dueDate}</td>
-                                        <td className="px-4 py-3">{row.days}</td>
-                                        <td className="px-4 py-3 text-right">{formatMoney(row.principal)}</td>
-                                        <td className="px-4 py-3 text-right">{formatMoney(row.interest)}</td>
-                                        <td className="px-4 py-3 text-right">{formatMoney(row.commission)}</td>
-                                        <td className="px-4 py-3 text-right">{formatMoney(row.expense)}</td>
-                                        <td className="px-4 py-3 text-right font-bold text-accent">{formatMoney(row.total)}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                            <tfoot className="bg-background/80 font-bold text-foreground border-t border-foreground/20">
-                                <tr>
-                                    <td colSpan={3} className="px-4 py-3 text-right uppercase">Toplamlar</td>
-                                    <td className="px-4 py-3 text-right">{formatMoney(results.totals.principal)}</td>
-                                    <td className="px-4 py-3 text-right">{formatMoney(results.totals.interest)}</td>
-                                    <td className="px-4 py-3 text-right">{formatMoney(results.totals.commission)}</td>
-                                    <td className="px-4 py-3 text-right">{formatMoney(results.totals.expense)}</td>
-                                    <td className="px-4 py-3 text-right text-accent">{formatMoney(results.totals.totalPayment)}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-            )}
+                )}
+            </div>
 
         </div>
       </main>
