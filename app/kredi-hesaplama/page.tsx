@@ -9,6 +9,10 @@ import { auth, db } from '@/lib/firebase';
 import { signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 
+// PDF Kütüphaneleri
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
 type CreditType = 'business' | 'building' | 'vehicle';
 
 interface DeductionRates {
@@ -300,7 +304,6 @@ const KrediHesaplama: React.FC = () => {
 
   const rangeStep = creditType === 'business' ? 5000 : 25000; 
 
-  // ⭐️ YENİ: Sayfa Başlığını Ayarla
   useEffect(() => {
     document.title = "Kredi Hesaplama | ESKKK";
   }, []);
@@ -404,16 +407,232 @@ const KrediHesaplama: React.FC = () => {
     return `${years} Yıl (${term} Ay)`;
   };
 
-  // ... PDF ve Print fonksiyonları aynı kalabilir, görsel stiller HTML içinde olduğu için buradaki CSS güncellemeleri yeterli olacaktır. ...
-  // (Kısalık için bu fonksiyonların içini değiştirmiyorum, mantık aynı)
-  const handleShare = async () => { /* ... */ };
-  const handlePrint = () => { /* ... */ };
+  // ⭐️ PDF OLUŞTURMA FONKSİYONU (TÜRKÇE KARAKTER DESTEĞİ)
+  const generatePDF = async () => {
+    if (!results) return null;
+
+    const doc = new jsPDF();
+
+    try {
+      const fontUrl = 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf';
+      const response = await fetch(fontUrl);
+      const blob = await response.blob();
+      const reader = new FileReader();
+
+      return new Promise<jsPDF>((resolve) => {
+        reader.onloadend = () => {
+          const fontDataUrl = reader.result as string;
+          const base64String = fontDataUrl.split(',')[1];
+
+          if (base64String) {
+            doc.addFileToVFS("Roboto-Regular.ttf", base64String);
+            doc.addFont("Roboto-Regular.ttf", "Roboto", "normal");
+            doc.setFont("Roboto"); 
+          }
+
+          createPDFContent(doc);
+          resolve(doc);
+        };
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error("Font yüklenemedi:", error);
+      createPDFContent(doc); 
+      return doc;
+    }
+  };
+
+  const createPDFContent = (doc: jsPDF) => {
+    doc.setFontSize(18);
+    doc.text("Kredi Ödeme Planı", 14, 20);
+
+    doc.setFontSize(10);
+    doc.text(`Tarih: ${new Date().toLocaleDateString('tr-TR')}`, 14, 28);
+    
+    doc.setFillColor(245, 247, 250);
+    doc.roundedRect(14, 32, 182, 28, 2, 2, 'F');
+    
+    doc.setFontSize(11);
+    doc.text("Kredi Detayları", 18, 40);
+    
+    doc.setFontSize(10);
+    doc.text(`Kredi Tutarı: ${formatMoney(amount)}`, 18, 48);
+    doc.text(`Vade: ${term} Ay`, 80, 48);
+    doc.text(`Faiz Oranı: %${currentInterest}`, 140, 48);
+    
+    doc.text(`Ödeme Sıklığı: ${frequency === 1 ? 'Aylık' : frequency + ' Aylık'}`, 18, 54);
+    doc.text(`Toplam Geri Ödeme: ${formatMoney(results!.totals.totalPayment)}`, 80, 54);
+
+    const tableColumn = ["Taksit", "Tarih", "Gün", "Anapara", "Faiz", "Komisyon", "Masraf", "Toplam"];
+    const tableRows = results!.paymentSchedule.map(row => [
+        row.installmentNumber,
+        row.dueDate,
+        row.days,
+        formatMoney(row.principal),
+        formatMoney(row.interest),
+        formatMoney(row.commission),
+        formatMoney(row.expense),
+        formatMoney(row.total)
+    ]);
+
+    autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 65,
+        theme: 'grid',
+        showFoot: 'lastPage', 
+        styles: { font: "Roboto", fontStyle: 'normal', fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [79, 70, 229], textColor: 255 }, 
+        foot: [[
+            "TOPLAM", "", "", 
+            formatMoney(results!.totals.principal), 
+            formatMoney(results!.totals.interest), 
+            formatMoney(results!.totals.commission), 
+            formatMoney(results!.totals.expense), 
+            formatMoney(results!.totals.totalPayment)
+        ]],
+        footStyles: { fillColor: [240, 240, 240], textColor: 0 }
+    });
+
+    // --- ⭐️ YENİ: KESİNTİLER TABLOSU (YAN YANA) ---
+    const finalY = (doc as any).lastAutoTable.finalY || 150;
+    
+    // Sayfa sonuna yaklaştıysa yeni sayfa aç
+    if (finalY > 250) {
+        doc.addPage();
+        // Yeni sayfada başlık hizası için Y'yi sıfırla (veya uygun bir değere ayarla)
+    }
+    
+    const startYSummary = finalY > 250 ? 20 : finalY + 15;
+
+    doc.setFontSize(11);
+    doc.setTextColor(0);
+    doc.text("Kesinti ve Net Tutar Özeti", 14, startYSummary);
+
+    const summaryHeaders = [
+        "Bloke Sermaye",
+        "Risk Sermayesi",
+        "Bölge Birliği",
+        "TESKOMB",
+        "Peşin Masraf",
+        "TOPLAM KESİNTİ",
+        "NET ELE GEÇEN"
+    ];
+
+    const summaryData = [[
+        formatMoney(results!.deductions.blokeSermaye),
+        formatMoney(results!.deductions.riskSermayesi),
+        formatMoney(results!.deductions.bolgeBirligi),
+        formatMoney(results!.deductions.teskomb),
+        formatMoney(results!.deductions.pesinMasraf),
+        formatMoney(results!.deductions.totalDeductions),
+        formatMoney(results!.netAmount)
+    ]];
+
+    autoTable(doc, {
+        startY: startYSummary + 3,
+        head: [summaryHeaders],
+        body: summaryData,
+        theme: 'grid',
+        styles: {
+            font: "Roboto",
+            fontSize: 7,
+            cellPadding: 2,
+            halign: 'center',
+            valign: 'middle'
+        },
+        headStyles: {
+            fillColor: [75, 85, 99], // Slate 600 (Daha nötr bir gri)
+            textColor: 255,
+            fontStyle: 'bold'
+        },
+        columnStyles: {
+            5: { fontStyle: 'bold', textColor: [220, 38, 38] }, // Toplam Kesinti: Kırmızı
+            6: { fontStyle: 'bold', textColor: [22, 163, 74], fillColor: [240, 253, 244] }  // Net Ele Geçen: Yeşil ve Açık Yeşil Arkaplan
+        }
+    });
+
+    // Alt Bilgi
+    const finalYSummaryTable = (doc as any).lastAutoTable.finalY;
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text("Bu ödeme planı bilgilendirme amaçlıdır. Kesin sonuçlar şube yetkilileri ile görüşülerek teyit edilmelidir.", 14, finalYSummaryTable + 10);
+  };
+
+  // PAYLAŞ BUTONU
+  const handleShare = async () => {
+    if (!results) return;
+    setIsPdfGenerating(true);
+
+    try {
+        const doc = await generatePDF(); 
+        if (!doc) return;
+
+        const pdfBlob = doc.output('blob');
+        const pdfFile = new File([pdfBlob], "Kredi_Odeme_Plani.pdf", { type: "application/pdf" });
+
+        if (navigator.share && navigator.canShare({ files: [pdfFile] })) {
+            await navigator.share({
+                title: 'Kredi Ödeme Planı',
+                text: `Kredi Tutarı: ${formatMoney(amount)} - Vade: ${term} Ay\nDetaylı ödeme planı ektedir.`,
+                files: [pdfFile]
+            });
+        } else {
+            doc.save("Kredi_Odeme_Plani.pdf");
+        }
+    } catch (error) {
+        console.error("Paylaşım hatası:", error);
+        generatePDF().then(doc => doc && doc.save("Kredi_Odeme_Plani.pdf"));
+    } finally {
+        setIsPdfGenerating(false);
+    }
+  };
+
+  // ⭐️ YAZDIR BUTONU (SİTE İÇERİSİNDE IFRAME İLE)
+  const handlePrint = async () => {
+     if (!results) return;
+     setIsPdfGenerating(true);
+     try {
+         const doc = await generatePDF();
+         if (doc) {
+             // PDF'e otomatik yazdırma scripti ekle
+             doc.autoPrint();
+             
+             // Blob URL oluştur
+             const blob = doc.output('blob');
+             const blobUrl = URL.createObjectURL(blob);
+             
+             // Gizli iframe oluştur (Sitede arka planda açılacak)
+             const iframe = document.createElement('iframe');
+             iframe.style.position = 'fixed';
+             iframe.style.width = '0px';
+             iframe.style.height = '0px';
+             iframe.style.border = 'none';
+             iframe.src = blobUrl;
+             
+             document.body.appendChild(iframe);
+             
+             // İframe yüklenince yazdırmayı tetikle
+             iframe.onload = () => {
+                 if (iframe.contentWindow) {
+                     iframe.contentWindow.print();
+                 }
+             };
+         }
+     } catch (error) {
+         console.error("Yazdırma hatası:", error);
+         alert("Yazdırma işlemi başlatılamadı.");
+     } finally {
+         setIsPdfGenerating(false);
+     }
+  };
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground flex flex-col transition-colors duration-500">
       <Navbar />
       
       <main className="flex-grow relative overflow-hidden">
+        
         <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
             <div className="absolute top-[-10%] right-[-5%] w-[700px] h-[700px] bg-accent/10 rounded-full blur-[120px] mix-blend-screen"></div>
             <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-primary/15 rounded-full blur-[150px] mix-blend-screen"></div>
@@ -571,11 +790,28 @@ const KrediHesaplama: React.FC = () => {
 
             {showSchedule && results && (
                 <div className="mt-8 bg-foreground/5 border border-foreground/10 rounded-3xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="p-6 border-b border-foreground/10 flex justify-between items-center bg-background/50">
+                    <div className="p-6 border-b border-foreground/10 flex flex-col sm:flex-row justify-between items-center bg-background/50 gap-4">
                         <h3 className="text-xl font-bold text-foreground">Ödeme Planı</h3>
-                        {/* Butonlar */}
-                        <div className="flex gap-2">
-                            {/* ... Paylaş/Yazdır butonları ... */}
+                        
+                        {/* PAYLAŞ VE YAZDIR BUTONLARI */}
+                        <div className="flex gap-3">
+                            <button 
+                                onClick={handlePrint}
+                                disabled={isPdfGenerating}
+                                className="flex items-center gap-2 px-4 py-2 bg-foreground/10 hover:bg-foreground/20 text-foreground rounded-lg font-medium transition-colors text-sm disabled:opacity-70"
+                            >
+                                {isPdfGenerating ? <Loader2 className="animate-spin w-4 h-4" /> : <Printer size={16} />}
+                                <span className="hidden sm:inline">Yazdır</span>
+                            </button>
+                            
+                            <button 
+                                onClick={handleShare}
+                                disabled={isPdfGenerating}
+                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg font-bold transition-all shadow-lg shadow-primary/20 hover:shadow-primary/30 text-sm disabled:opacity-70 disabled:cursor-not-allowed"
+                            >
+                                {isPdfGenerating ? <Loader2 className="animate-spin w-4 h-4" /> : <Share2 size={16} />}
+                                <span>Paylaş</span>
+                            </button>
                         </div>
                     </div>
                     <div className="overflow-x-auto">
