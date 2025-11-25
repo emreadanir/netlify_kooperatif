@@ -1,5 +1,3 @@
-import { Loader2 } from 'lucide-react';
-
 // Bu dosya Next.js tarafından otomatik kullanılır.
 // Sayfa içeriği hazırlanırken kullanıcıya anında bu bileşen gösterilir.
 // Bu sayede "Render-Blocking" hissi azalır ve FCP (First Contentful Paint) iyileşir.
@@ -12,7 +10,8 @@ export default function Loading() {
         <div className="relative">
             <div className="absolute inset-0 bg-indigo-500/30 blur-xl rounded-full animate-pulse"></div>
             <div className="relative bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-2xl">
-                <Loader2 className="w-12 h-12 text-indigo-500 animate-spin" />
+                {/* Lucide ikonu yerine Saf CSS Spinner kullanıldı. Bu, JS bundle boyutunu ve ilk boyama süresini iyileştirir. */}
+                <div className="w-12 h-12 rounded-full border-4 border-slate-700 border-t-indigo-500 animate-spin"></div>
             </div>
         </div>
         
