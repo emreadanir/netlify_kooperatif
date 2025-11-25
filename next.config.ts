@@ -2,13 +2,18 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  // NOT: 'eslint' ayarı kaldırıldı çünkü Next.js yeni sürümlerinde bu dosya üzerinden desteklenmiyor.
-  // Lint kontrolünü devre dışı bırakmak için package.json'daki build komutunu güncelledik.
   
   typescript: {
     // Build sırasında TypeScript hatalarını görmezden gel (Hızlı deploy için)
     ignoreBuildErrors: true,
   },
+  
+  // ⭐️ LCP ve Performans Optimizasyonu
+  experimental: {
+    // Büyük kütüphanelerin sadece kullanılan parçalarını yükler
+    optimizePackageImports: ['lucide-react', 'firebase/auth', 'firebase/firestore'],
+  },
+
   images: {
     remotePatterns: [
       {
