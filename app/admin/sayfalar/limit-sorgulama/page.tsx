@@ -17,7 +17,7 @@ import {
 import { auth, db, appId } from '@/lib/firebase';
 import { 
   Search, Plus, Trash2, Edit, Save, X, 
-  Loader2, AlertCircle, Database, ArrowLeft, CheckCircle2, Upload, FileSpreadsheet, Download 
+  Loader2, Database, ArrowLeft, CheckCircle2, Upload, FileSpreadsheet, Download 
 } from 'lucide-react';
 import Link from 'next/link';
 import * as XLSX from 'xlsx'; 
@@ -107,6 +107,8 @@ export default function LimitSorgulamaYonetimi() {
       UST_LIMIT_TL: item.UST_LIMIT_TL.toString()
     });
     setEditingId(item.id);
+    
+    // Mobilde form en üstte olduğu için yukarı kaydır
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -153,7 +155,6 @@ export default function LimitSorgulamaYonetimi() {
 
   // --- EXCEL İŞLEMLERİ ---
 
-  // Örnek Şablon İndirme
   const handleDownloadTemplate = () => {
     const templateData = [
         { MESLEK: "Örnek Meslek", NACE_KODU: "123456", NACE_TANIMI: "Örnek Faaliyet Tanımı", UST_LIMIT_TL: 500000 }
@@ -164,7 +165,6 @@ export default function LimitSorgulamaYonetimi() {
     XLSX.writeFile(workbook, "nace_yukleme_sablonu.xlsx");
   };
 
-  // Excel Dosyası Yükleme
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -206,7 +206,7 @@ export default function LimitSorgulamaYonetimi() {
                 return;
             }
 
-            // Batch Yükleme (Firestore limitleri nedeniyle 500'erli gruplar halinde)
+            // Batch Yükleme (Firestore limitleri nedeniyle 450'şerli gruplar halinde)
             const chunkSize = 450; 
             for (let i = 0; i < formattedData.length; i += chunkSize) {
                 const chunk = formattedData.slice(i, i + chunkSize);
@@ -262,7 +262,7 @@ export default function LimitSorgulamaYonetimi() {
           <p className="text-slate-400 text-xs md:text-sm mt-1">NACE kodları ve kredi limitlerini buradan yönetebilirsiniz.</p>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
-            <Link href="/admin" className="flex-1 md:flex-none justify-center px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium border border-slate-700 whitespace-nowrap">
+            <Link href="/admin" className="flex-1 md:flex-none justify-center px-4 py-3 md:py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium border border-slate-700 whitespace-nowrap active:scale-95">
                 <ArrowLeft size={16} />
                 Geri Dön
             </Link>
@@ -273,7 +273,7 @@ export default function LimitSorgulamaYonetimi() {
         
         {/* --- SOL: FORM ALANI --- */}
         <div className="lg:col-span-4">
-          <div className={`bg-slate-800/50 border rounded-2xl p-4 md:p-6 sticky top-6 transition-all duration-300 ${editingId ? 'border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.1)]' : 'border-slate-700/50'}`}>
+          <div className={`bg-slate-800/50 border rounded-2xl p-4 md:p-6 sticky top-4 md:top-6 transition-all duration-300 ${editingId ? 'border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.1)]' : 'border-slate-700/50'}`}>
             
             <div className="flex items-center justify-between mb-6">
               <h3 className={`text-lg font-bold flex items-center gap-2 ${editingId ? 'text-amber-400' : 'text-white'}`}>
@@ -281,7 +281,7 @@ export default function LimitSorgulamaYonetimi() {
                 {editingId ? 'Kaydı Düzenle' : 'Yeni Kayıt Ekle'}
               </h3>
               {editingId && (
-                <button onClick={resetForm} className="text-xs text-slate-400 hover:text-white flex items-center gap-1 bg-slate-700/50 px-2 py-1 rounded transition-colors">
+                <button onClick={resetForm} className="text-xs text-slate-400 hover:text-white flex items-center gap-1 bg-slate-700/50 px-3 py-1.5 rounded-lg transition-colors">
                   <X size={12} /> Vazgeç
                 </button>
               )}
@@ -295,7 +295,7 @@ export default function LimitSorgulamaYonetimi() {
                   type="text" 
                   value={formData.NACE_KODU}
                   onChange={(e) => setFormData({...formData, NACE_KODU: e.target.value.replace(/\D/g, '')})}
-                  className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500 font-mono tracking-wider text-sm"
+                  className="w-full bg-slate-900/50 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 font-mono tracking-wider text-sm placeholder-slate-600 transition-colors"
                   placeholder="Örn: 561107"
                   maxLength={6}
                   required
@@ -308,7 +308,7 @@ export default function LimitSorgulamaYonetimi() {
                   type="text" 
                   value={formData.MESLEK}
                   onChange={(e) => setFormData({...formData, MESLEK: e.target.value})}
-                  className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500 text-sm"
+                  className="w-full bg-slate-900/50 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 text-sm placeholder-slate-600 transition-colors"
                   placeholder="Örn: Börekçilik"
                   required
                 />
@@ -320,7 +320,7 @@ export default function LimitSorgulamaYonetimi() {
                   rows={3}
                   value={formData.NACE_TANIMI}
                   onChange={(e) => setFormData({...formData, NACE_TANIMI: e.target.value})}
-                  className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500 resize-none text-sm"
+                  className="w-full bg-slate-900/50 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 resize-none text-sm placeholder-slate-600 transition-colors"
                   placeholder="Vergi levhasında yazan açıklama..."
                   required
                 ></textarea>
@@ -332,7 +332,7 @@ export default function LimitSorgulamaYonetimi() {
                   type="number" 
                   value={formData.UST_LIMIT_TL}
                   onChange={(e) => setFormData({...formData, UST_LIMIT_TL: e.target.value})}
-                  className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500 font-mono text-sm"
+                  className="w-full bg-slate-900/50 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 font-mono text-sm placeholder-slate-600 transition-colors"
                   placeholder="600000"
                   required
                 />
@@ -341,7 +341,7 @@ export default function LimitSorgulamaYonetimi() {
               <button 
                 type="submit" 
                 disabled={isSubmitting}
-                className={`w-full font-bold py-3 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg ${
+                className={`w-full font-bold py-3.5 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] ${
                   editingId 
                   ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-900/20' 
                   : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-900/20'
@@ -366,7 +366,7 @@ export default function LimitSorgulamaYonetimi() {
                     
                     <button 
                         onClick={handleDownloadTemplate}
-                        className="flex items-center justify-center gap-2 w-full py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 text-xs font-medium rounded-lg transition-colors whitespace-normal text-center"
+                        className="flex items-center justify-center gap-2 w-full py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 text-xs font-medium rounded-lg transition-colors whitespace-normal text-center active:bg-slate-600"
                     >
                         <Download size={14} className="shrink-0" /> Örnek Şablonu İndir
                     </button>
@@ -382,7 +382,7 @@ export default function LimitSorgulamaYonetimi() {
                         />
                         <button 
                             disabled={isUploading}
-                            className="flex items-center justify-center gap-2 w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors shadow-lg shadow-emerald-900/20 disabled:opacity-70 whitespace-normal text-center"
+                            className="flex items-center justify-center gap-2 w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors shadow-lg shadow-emerald-900/20 disabled:opacity-70 whitespace-normal text-center active:scale-[0.98]"
                         >
                             {isUploading ? <Loader2 className="animate-spin w-4 h-4 shrink-0" /> : <Upload size={16} className="shrink-0" />}
                             {isUploading ? 'Yükleniyor...' : 'Excel Dosyası Seç ve Yükle'}
@@ -404,18 +404,18 @@ export default function LimitSorgulamaYonetimi() {
                     <input 
                         type="text" 
                         placeholder="Kod, meslek veya tanım ara..." 
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <div className="text-xs text-slate-400 font-medium bg-slate-900 px-3 py-2 rounded-lg border border-slate-800 w-full sm:w-auto text-center">
+                <div className="text-xs text-slate-400 font-medium bg-slate-900 px-4 py-3 rounded-xl border border-slate-800 w-full sm:w-auto text-center whitespace-nowrap">
                     Toplam <span className="text-white font-bold">{naceList.length}</span> Kayıt
                 </div>
             </div>
 
             {/* Liste */}
-            <div className="space-y-3">
+            <div className="space-y-3 pb-20 lg:pb-0">
                 {filteredList.length === 0 ? (
                     <div className="text-center py-12 text-slate-500 bg-slate-800/20 rounded-2xl border border-slate-700/30 border-dashed">
                         <Search className="w-12 h-12 mx-auto mb-3 opacity-20" />
@@ -428,17 +428,17 @@ export default function LimitSorgulamaYonetimi() {
                             {/* İÇERİK KISMI: Mobilde yan yana (row), masaüstünde normal akış */}
                             <div className="flex items-start gap-4 flex-1">
                                 {/* NACE Kodu Kutusu */}
-                                <div className="flex items-center justify-center h-14 sm:h-16 min-w-[4rem] w-auto px-3 bg-slate-900 rounded-xl border border-slate-700 shrink-0 font-mono text-sm font-bold text-indigo-400 tracking-wide shadow-inner text-center">
+                                <div className="flex items-center justify-center h-14 sm:h-16 w-16 sm:min-w-[4.5rem] px-1 bg-slate-900 rounded-xl border border-slate-700 shrink-0 font-mono text-xs sm:text-sm font-bold text-indigo-400 tracking-wide shadow-inner text-center break-all">
                                     {item.NACE_KODU}
                                 </div>
 
-                                <div className="flex-1 min-w-0 py-1">
-                                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                                        <h4 className="text-white font-bold text-sm sm:text-base truncate">{item.MESLEK}</h4>
-                                        {editingId === item.id && <span className="text-[9px] sm:text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded border border-amber-500/20">Düzenleniyor</span>}
+                                <div className="flex-1 min-w-0 py-0.5">
+                                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                                        <h4 className="text-white font-bold text-sm sm:text-base line-clamp-1">{item.MESLEK}</h4>
+                                        {editingId === item.id && <span className="text-[9px] sm:text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded border border-amber-500/20 whitespace-nowrap">Düzenleniyor</span>}
                                     </div>
-                                    <p className="text-slate-400 text-xs line-clamp-2 leading-relaxed mb-2">{item.NACE_TANIMI}</p>
-                                    <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
+                                    <p className="text-slate-400 text-xs line-clamp-2 leading-relaxed mb-2.5">{item.NACE_TANIMI}</p>
+                                    <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
                                         <CheckCircle2 size={12} />
                                         Limit: {formatMoney(item.UST_LIMIT_TL)}
                                     </div>
@@ -446,20 +446,20 @@ export default function LimitSorgulamaYonetimi() {
                             </div>
 
                             {/* AKSİYON BUTONLARI: Mobilde alta tam genişlik, masaüstünde sağa */}
-                            <div className="flex sm:flex-col gap-2 w-full sm:w-auto justify-end sm:justify-center pt-3 sm:pt-0 mt-1 sm:mt-0 border-t sm:border-t-0 sm:border-l border-slate-700/50 sm:pl-2 sm:ml-auto">
+                            <div className="flex sm:flex-col gap-2 w-full sm:w-auto justify-end sm:justify-center pt-3 sm:pt-0 mt-1 sm:mt-0 border-t sm:border-t-0 sm:border-l border-slate-700/50 sm:pl-3 sm:ml-auto">
                                 <button 
                                 onClick={() => handleEditClick(item)}
-                                className="flex-1 sm:flex-none flex items-center justify-center p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors bg-slate-800/50 sm:bg-transparent"
+                                className="flex-1 sm:flex-none flex items-center justify-center px-3 py-2.5 sm:p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors bg-slate-800/50 sm:bg-transparent border border-slate-700/50 sm:border-transparent"
                                 title="Düzenle"
                                 >
-                                <Edit size={18} /> <span className="sm:hidden ml-2 text-xs font-medium">Düzenle</span>
+                                <Edit size={18} /> <span className="sm:hidden ml-2 text-xs font-bold">Düzenle</span>
                                 </button>
                                 <button 
                                 onClick={() => handleDelete(item.id)}
-                                className="flex-1 sm:flex-none flex items-center justify-center p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors bg-slate-800/50 sm:bg-transparent"
+                                className="flex-1 sm:flex-none flex items-center justify-center px-3 py-2.5 sm:p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors bg-slate-800/50 sm:bg-transparent border border-slate-700/50 sm:border-transparent"
                                 title="Sil"
                                 >
-                                <Trash2 size={18} /> <span className="sm:hidden ml-2 text-xs font-medium">Sil</span>
+                                <Trash2 size={18} /> <span className="sm:hidden ml-2 text-xs font-bold">Sil</span>
                                 </button>
                             </div>
                         </div>
