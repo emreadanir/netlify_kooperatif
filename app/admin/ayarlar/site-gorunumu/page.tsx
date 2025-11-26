@@ -3,13 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // ⭐️ Storage fonksiyonları
-import { auth, db, appId, storage } from '@/lib/firebase'; // ⭐️ Storage importu
+import { auth, db, appId } from '@/lib/firebase'; // ⭐️ Storage importları kaldırıldı
 import { 
-  Save, Loader2, Layout, Menu, Plus, Trash2, 
+  Save, Loader2, Layout, Menu, Plus, Trash2, // ⭐️ Trash2 buraya eklendi
   ArrowLeft, Image as ImageIcon, Type, 
-  Facebook, Instagram, Globe, Linkedin, Youtube,
-  Upload // ⭐️ Upload ikonu
+  Facebook, Instagram, Globe, Linkedin, Youtube
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -147,9 +145,9 @@ export default function SiteGorunumuYonetimi() {
   const [saving, setSaving] = useState(false);
   const [user, setUser] = useState<any>(null);
 
-  // ⭐️ YENİ: Yükleme durumu state'leri
-  const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [uploadingFavicon, setUploadingFavicon] = useState(false);
+  // ⭐️ KALDIRILDI: Yükleme durumu state'leri kaldırıldı (Dosya yükleme özelliği iptal edildi)
+  // const [uploadingLogo, setUploadingLogo] = useState(false);
+  // const [uploadingFavicon, setUploadingFavicon] = useState(false);
 
   // Auth
   useEffect(() => {
@@ -217,45 +215,8 @@ export default function SiteGorunumuYonetimi() {
     }
   };
 
-  // ⭐️ YENİ: Dosya Yükleme Fonksiyonu
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'favicon') => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // ⭐️ KALDIRILDI: Dosya yükleme fonksiyonu kaldırıldı
 
-    const isLogo = type === 'logo';
-    if (isLogo) setUploadingLogo(true); else setUploadingFavicon(true);
-
-    try {
-        // Dosya yolu: artifacts/{appId}/public/assets/site-identity/{timestamp}_{filename}
-        // Benzersiz isim olması için timestamp ekliyoruz.
-        const path = `artifacts/${appId}/public/assets/site-identity/${Date.now()}_${file.name}`;
-        const storageRef = ref(storage, path);
-        
-        // Yükleme işlemi
-        const snapshot = await uploadBytes(storageRef, file);
-        
-        // URL alma
-        const downloadURL = await getDownloadURL(snapshot.ref);
-
-        // State güncelleme
-        setSettings(prev => ({
-            ...prev,
-            navbar: {
-                ...prev.navbar,
-                [isLogo ? 'logoUrl' : 'faviconUrl']: downloadURL
-            }
-        }));
-    } catch (err) {
-        console.error("Dosya yükleme hatası:", err);
-        alert("Dosya yüklenirken bir hata oluştu.");
-    } finally {
-        if (isLogo) setUploadingLogo(false); else setUploadingFavicon(false);
-        // Input'u temizle ki aynı dosyayı tekrar seçebilsin
-        e.target.value = '';
-    }
-  };
-
-  // ... (Diğer Helper Fonksiyonlar değişmedi, sadece render kısmında ekleme yapıldı) ...
   // --- FOOTER HELPERS ---
   const addFooterLink = (type: 'quickLinks' | 'legislationLinks') => {
     const newLinks = [...settings.footer[type], { name: 'Yeni Link', href: '#' }];
@@ -347,10 +308,10 @@ export default function SiteGorunumuYonetimi() {
                     </h3>
                     <div className="grid gap-6 md:grid-cols-2">
                         
-                        {/* ⭐️ LOGO ALANI GÜNCELLENDİ */}
+                        {/* ⭐️ GÜNCELLENDİ: LOGO URL ALANI */}
                         <div>
-                            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Logo</label>
-                            <div className="flex gap-3 mb-2">
+                            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Logo URL</label>
+                            <div className="flex gap-3">
                                 <div className="w-12 h-12 bg-slate-900 rounded-lg border border-slate-700 flex items-center justify-center shrink-0 overflow-hidden">
                                     <img src={settings.navbar.logoUrl} alt="Logo" className="w-8 h-8 object-contain" />
                                 </div>
@@ -362,18 +323,13 @@ export default function SiteGorunumuYonetimi() {
                                     placeholder="https://..."
                                 />
                             </div>
-                            {/* Yükleme Butonu */}
-                            <label className={`flex items-center justify-center gap-2 w-full py-2 border border-dashed border-slate-600 rounded-lg cursor-pointer hover:bg-slate-800/50 transition-colors ${uploadingLogo ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                {uploadingLogo ? <Loader2 size={14} className="animate-spin text-indigo-400" /> : <Upload size={14} className="text-indigo-400" />}
-                                <span className="text-xs text-slate-400 font-medium">{uploadingLogo ? 'Yükleniyor...' : 'Bilgisayardan Logo Yükle'}</span>
-                                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, 'logo')} disabled={uploadingLogo} />
-                            </label>
+                            <p className="text-[10px] text-slate-500 mt-2">Logonun yüklü olduğu tam URL adresi.</p>
                         </div>
                         
-                        {/* ⭐️ FAVICON ALANI GÜNCELLENDİ */}
+                        {/* ⭐️ GÜNCELLENDİ: FAVICON URL ALANI */}
                         <div>
-                            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Favicon (Sekme İkonu)</label>
-                            <div className="flex gap-3 mb-2">
+                            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Favicon URL (Sekme İkonu)</label>
+                            <div className="flex gap-3">
                                 <div className="w-12 h-12 bg-slate-900 rounded-lg border border-slate-700 flex items-center justify-center shrink-0 overflow-hidden">
                                     <img src={settings.navbar.faviconUrl} alt="Favicon" className="w-6 h-6 object-contain" />
                                 </div>
@@ -385,12 +341,7 @@ export default function SiteGorunumuYonetimi() {
                                     placeholder="/favicon.ico"
                                 />
                             </div>
-                            {/* Yükleme Butonu */}
-                            <label className={`flex items-center justify-center gap-2 w-full py-2 border border-dashed border-slate-600 rounded-lg cursor-pointer hover:bg-slate-800/50 transition-colors ${uploadingFavicon ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                {uploadingFavicon ? <Loader2 size={14} className="animate-spin text-indigo-400" /> : <Upload size={14} className="text-indigo-400" />}
-                                <span className="text-xs text-slate-400 font-medium">{uploadingFavicon ? 'Yükleniyor...' : 'Bilgisayardan Favicon Yükle'}</span>
-                                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, 'favicon')} disabled={uploadingFavicon} />
-                            </label>
+                            <p className="text-[10px] text-slate-500 mt-2">Favicon'un yüklü olduğu tam URL adresi.</p>
                         </div>
 
                         {/* Başlıklar */}

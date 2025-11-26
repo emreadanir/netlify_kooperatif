@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Menu, X, CreditCard, ChevronDown, Calculator, Search } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db, appId } from '@/lib/firebase';
+import { useSiteSettings } from '@/components/SiteContext'; // ⭐️ Context Hook'u eklendi
 
 interface SubMenuItem {
     name: string;
@@ -49,7 +50,18 @@ const DEFAULT_NAVBAR: NavbarSettings = {
 };
 
 const Navbar: React.FC = () => {
-  const [settings, setSettings] = useState<NavbarSettings>(DEFAULT_NAVBAR);
+  // ⭐️ Context'ten gelen sunucu verisini alıyoruz
+  const siteSettings = useSiteSettings();
+
+  // ⭐️ State'i başlatırken öncelikle sunucudan gelen veriyi kullanıyoruz.
+  // Böylece sayfa ilk açıldığında doğru logo ile açılıyor.
+  const [settings, setSettings] = useState<NavbarSettings>(() => {
+      if (siteSettings?.navbar) {
+          return { ...DEFAULT_NAVBAR, ...siteSettings.navbar };
+      }
+      return DEFAULT_NAVBAR;
+  });
+
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [openMobileSubmenu, setOpenMobileSubmenu] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState<boolean>(false);
@@ -63,6 +75,8 @@ const Navbar: React.FC = () => {
   }, []);
 
   // Firestore Realtime Data Fetch
+  // ⭐️ Bu kısım hala gerekli, çünkü kullanıcı sitedeyken admin panelden
+  // bir değişiklik yapılırsa (logo değişirse) anlık olarak yansımasını sağlar.
   useEffect(() => {
     if (!db) return;
     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'site_settings', 'layout');
@@ -71,7 +85,7 @@ const Navbar: React.FC = () => {
         if (docSnap.exists()) {
             const data = docSnap.data();
             if (data.navbar) {
-                setSettings(data.navbar as NavbarSettings);
+                setSettings(prev => ({ ...prev, ...data.navbar }));
             }
         }
     });
@@ -97,7 +111,6 @@ const Navbar: React.FC = () => {
           : 'bg-transparent' 
       }`}
     >
-      {/* Alt Çizgi Efekti: indigo yerine primary */}
       <div className={`absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 transition-opacity duration-500 ${scrolled ? 'opacity-100' : ''}`}></div>
 
       <div className="max-w-screen-2xl mx-auto px-6 sm:px-8 lg:px-10"> 
@@ -106,7 +119,6 @@ const Navbar: React.FC = () => {
           {/* --- LOGO ALANI --- */}
           <Link href="/" className="flex items-center cursor-pointer group relative z-50 gap-5" onClick={closeMenu}>
             <div className="relative flex-shrink-0">
-                {/* Arka plan parlama efekti: amber/orange yerine secondary/accent */}
                 <div className="absolute inset-0 bg-gradient-to-br from-secondary/40 via-accent/40 to-transparent rounded-full blur-2xl opacity-0 group-hover:opacity-70 transition-opacity duration-500 transform scale-150"></div>
                 <img 
                   src={settings.logoUrl || '/kooperatif_logo.webp'}
@@ -117,7 +129,6 @@ const Navbar: React.FC = () => {
             <div className="flex flex-col relative">
               <span className="font-bold text-lg lg:text-xl text-foreground leading-tight tracking-wide group-hover:text-secondary transition-colors drop-shadow-md">{settings.logoText}</span> 
               <span className="text-[9px] lg:text-[10px] text-foreground/60 font-bold tracking-[0.2em] uppercase group-hover:text-foreground transition-colors">{settings.logoSubText}</span>
-              {/* Alt Çizgi: amber yerine secondary */}
               <div className="absolute -bottom-2 left-0 w-0 h-px bg-gradient-to-r from-secondary to-transparent group-hover:w-full transition-all duration-700 ease-out opacity-50"></div>
             </div>
           </Link>
@@ -139,7 +150,6 @@ const Navbar: React.FC = () => {
 
                 {item.subItems && item.subItems.length > 0 && (
                   <div className="absolute left-0 mt-4 w-64 bg-background/95 backdrop-blur-xl border border-foreground/10 rounded-2xl shadow-2xl shadow-black/50 opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all duration-300 transform origin-top-left translate-y-2 group-hover/menu:translate-y-0 z-50 overflow-hidden">
-                    {/* Üst Çizgi: amber/indigo yerine secondary/primary */}
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-secondary via-primary to-secondary"></div>
                     <div className="p-2">
                       {item.subItems.map((subItem, subIndex) => (
@@ -156,7 +166,6 @@ const Navbar: React.FC = () => {
             
             {/* ONLINE İŞLEMLER (Sabit) */}
             <div className="pl-6 ml-2 relative group/online">
-              {/* Buton renkleri: amber yerine secondary */}
               <button className="relative overflow-hidden bg-gradient-to-r from-secondary to-secondary/80 hover:opacity-90 text-white px-6 py-3 rounded-full font-bold transition-all shadow-lg shadow-secondary/20 hover:shadow-secondary/40 hover:-translate-y-0.5 flex items-center gap-2 text-sm border border-white/10 z-50">
                 <div className="absolute inset-0 -translate-x-full group-hover/online:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/25 to-transparent z-10"></div>
                 <CreditCard size={16} className="text-white/90 group-hover/online:rotate-12 transition-transform" />

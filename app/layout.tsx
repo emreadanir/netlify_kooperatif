@@ -4,6 +4,7 @@ import { Metadata } from 'next';
 import React from "react";
 import FaviconUpdater from "@/components/FaviconUpdater";
 import ThemeUpdater from "@/components/ThemeUpdater";
+import { SiteProvider } from "@/components/SiteContext"; // ⭐️ Yeni Context
 
 // Firebase importları
 import { db, appId } from '@/lib/firebase';
@@ -45,27 +46,22 @@ async function getSiteSettings() {
   }
 }
 
-// ⭐️ DİNAMİK METADATA (Favicon Sorununun Çözümü)
-// Bu fonksiyon sayfa oluşturulurken çalışır ve doğru favicon/başlığı HTML'e gömer.
+// ⭐️ DİNAMİK METADATA
 export async function generateMetadata(): Promise<Metadata> {
   const { layout } = await getSiteSettings();
 
-  // Varsayılan değerler
   const defaultTitle = "S. S. Nilüfer İlçesi Esnaf ve Sanatkarlar Kredi ve Kefalet Kooperatifi";
   const defaultDesc = "Esnaf ve sanatkarlarımızın finansal ihtiyaçlarına yönelik çözümler sunan kredi kooperatifi resmi web sitesi.";
   const defaultIcon = "/kooperatif_logo.webp"; 
 
-  // Veritabanından gelen veriler (varsa)
   const dbTitle = layout?.navbar?.logoText ? `${layout.navbar.logoText} ${layout.navbar.logoSubText || ''}` : defaultTitle;
   const dbDesc = layout?.footer?.description || defaultDesc;
   const dbIcon = layout?.navbar?.faviconUrl || defaultIcon;
 
-  // İkon türünü dosya uzantısına göre belirle (Browser'a ipucu vermek için)
-  // Bu, tarayıcının doğru dosyayı tanımasına yardımcı olur ve önbellek sorunlarını azaltır.
   const iconType = dbIcon.endsWith('.ico') ? 'image/x-icon' : 
                    dbIcon.endsWith('.svg') ? 'image/svg+xml' : 
                    dbIcon.endsWith('.png') ? 'image/png' : 
-                   'image/webp'; // Varsayılan webp kabul ediyoruz
+                   'image/webp';
 
   return {
     title: dbTitle,
@@ -86,8 +82,8 @@ interface RootLayoutProps {
 export default async function RootLayout({
   children,
 }: RootLayoutProps) {
-  // Tema verisini (CSS değişkenleri için) alıyoruz
-  const { theme } = await getSiteSettings();
+  // Tema ve Layout verisini alıyoruz
+  const { theme, layout } = await getSiteSettings();
 
   // CSS değişkenlerini oluştur
   const serverThemeStyles = theme ? `
@@ -103,7 +99,6 @@ export default async function RootLayout({
   return (
     <html lang="tr">
       <head>
-        {/* Sunucu tarafında oluşturulan stilleri (Renkler) en başa ekliyoruz */}
         {serverThemeStyles && (
           <style dangerouslySetInnerHTML={{ __html: serverThemeStyles }} />
         )}
@@ -111,11 +106,12 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* İstemci tarafı güncellemeleri için bileşenler çalışmaya devam eder */}
-        <FaviconUpdater />
-        <ThemeUpdater />
-        
-        {children}
+        {/* ⭐️ SiteProvider ile veriyi alt bileşenlere (Navbar/Footer) aktarıyoruz */}
+        <SiteProvider settings={layout}>
+            <FaviconUpdater />
+            <ThemeUpdater />
+            {children}
+        </SiteProvider>
       </body>
     </html>
   );

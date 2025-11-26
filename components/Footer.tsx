@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Phone, Mail, MapPin, Facebook, Instagram, ChevronRight, ArrowRight, Linkedin, Youtube, Globe } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db, appId } from '@/lib/firebase';
+import { useSiteSettings } from '@/components/SiteContext'; // ⭐️ Context Hook'u eklendi
 
 // X İkonu
 const XIcon = ({ size = 18, className = "" }: { size?: number, className?: string }) => (
@@ -87,7 +88,6 @@ const socialIconMap: Record<string, any> = {
   website: Globe
 };
 
-// Renkleri tema ile uyumlu hale getirmek için hover classlarını güncelledik
 const socialColorClass: Record<string, string> = {
   facebook: "hover:bg-[#1877F2] hover:border-[#1877F2] shadow-lg hover:shadow-[#1877F2]/30",
   twitter: "hover:bg-black hover:border-gray-800 shadow-lg hover:shadow-black/50 text-foreground/60 hover:text-white",
@@ -98,7 +98,32 @@ const socialColorClass: Record<string, string> = {
 };
 
 const Footer: React.FC = () => {
-  const [settings, setSettings] = useState<FooterSettings>(DEFAULT_FOOTER);
+  // ⭐️ Context'ten sunucu verisini al
+  const siteSettings = useSiteSettings();
+
+  // ⭐️ State'i başlatırken sunucu verisini kullan
+  const [settings, setSettings] = useState<FooterSettings>(() => {
+      let initial = { ...DEFAULT_FOOTER };
+      
+      if (siteSettings?.footer) {
+          const footerData = siteSettings.footer;
+          initial = {
+              ...initial,
+              ...footerData,
+              socialLinks: Array.isArray(footerData.socialLinks) ? footerData.socialLinks : [],
+              quickLinksTitle: footerData.quickLinksTitle || initial.quickLinksTitle,
+              legislationLinksTitle: footerData.legislationLinksTitle || initial.legislationLinksTitle,
+          };
+      }
+      // Logo bilgilerini Navbar ayarlarından alıyoruz
+      if (siteSettings?.navbar) {
+          initial.logoUrl = siteSettings.navbar.logoUrl || initial.logoUrl;
+          initial.logoText = siteSettings.navbar.logoText || initial.logoText;
+          initial.logoSubText = siteSettings.navbar.logoSubText || initial.logoSubText;
+      }
+      return initial;
+  });
+
   const [isMounted, setIsMounted] = useState(false);
 
   const scrollToTop = useCallback((): void => {
@@ -116,23 +141,17 @@ const Footer: React.FC = () => {
     const unsubLayout = onSnapshot(layoutRef, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
-            if (data.footer) {
-                const fetchedSocialLinks = data.footer.socialLinks;
-                const normalizedSocialLinks = Array.isArray(fetchedSocialLinks) 
-                    ? fetchedSocialLinks 
-                    : [];
-
-                setSettings(prev => ({
+            setSettings(prev => {
+                const footerData = data.footer || {};
+                return {
                     ...prev,
-                    ...data.footer,
-                    socialLinks: normalizedSocialLinks,
-                    quickLinksTitle: data.footer.quickLinksTitle || prev.quickLinksTitle,
-                    legislationLinksTitle: data.footer.legislationLinksTitle || prev.legislationLinksTitle,
+                    ...footerData,
+                    socialLinks: Array.isArray(footerData.socialLinks) ? footerData.socialLinks : prev.socialLinks,
                     logoUrl: data.navbar?.logoUrl || prev.logoUrl,
                     logoText: data.navbar?.logoText || prev.logoText,
                     logoSubText: data.navbar?.logoSubText || prev.logoSubText,
-                }));
-            }
+                };
+            });
         }
     });
 
@@ -195,7 +214,7 @@ const Footer: React.FC = () => {
             <Link href="/" className="flex items-center cursor-pointer group w-fit gap-4" onClick={scrollToTop}>
               <div className="relative flex-shrink-0">
                 <div className="absolute inset-0 bg-gradient-to-br from-secondary/40 via-accent/40 to-transparent rounded-full blur-2xl opacity-0 group-hover:opacity-70 transition-opacity duration-500 transform scale-150"></div>
-                <img src={settings.logoUrl} alt="Logo" className="h-24 w-24 object-contain drop-shadow-2xl transition-transform duration-300 group-hover:scale-105 relative z-10" />
+                <img src={settings.logoUrl || '/kooperatif_logo.webp'} alt="Logo" className="h-24 w-24 object-contain drop-shadow-2xl transition-transform duration-300 group-hover:scale-105 relative z-10" />
               </div>
               <div className="flex flex-col relative">
                 <span className="font-bold text-sm text-foreground leading-tight tracking-wide group-hover:text-secondary transition-colors drop-shadow-md">{settings.logoText}</span>
