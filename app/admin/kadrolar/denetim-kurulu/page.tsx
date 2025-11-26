@@ -259,7 +259,19 @@ export default function DenetimKuruluYonetimi() {
                 </div>
               </div>
 
-              {/* Cinsiyet Seçimi */}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Fotoğraf URL (İsteğe Bağlı)</label>
+                <input 
+                  type="text" 
+                  value={image}
+                  onChange={(e) => setImage(e.target.value)}
+                  className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500 text-sm"
+                  placeholder="https://..."
+                />
+                <p className="text-[10px] text-slate-500 mt-1">Boş bırakılırsa aşağıda seçilen cinsiyete uygun varsayılan görsel kullanılır.</p>
+              </div>
+
+              {/* Cinsiyet Seçimi - En Alta Taşındı */}
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Cinsiyet (Varsayılan Fotoğraf İçin)</label>
                 <div className="flex gap-4">
@@ -286,18 +298,6 @@ export default function DenetimKuruluYonetimi() {
                         <span className="text-sm font-medium">Kadın</span>
                     </label>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Fotoğraf URL (İsteğe Bağlı)</label>
-                <input 
-                  type="text" 
-                  value={image}
-                  onChange={(e) => setImage(e.target.value)}
-                  className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500 text-sm"
-                  placeholder="https://..."
-                />
-                <p className="text-[10px] text-slate-500 mt-1">Boş bırakılırsa yukarıda seçilen cinsiyete uygun varsayılan görsel kullanılır.</p>
               </div>
 
               <button 

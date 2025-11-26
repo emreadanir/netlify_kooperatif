@@ -343,7 +343,7 @@ export default function PersonelKadrosuYonetimi() {
                   className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500 text-sm"
                   placeholder="https://..."
                 />
-                <p className="text-[10px] text-slate-500 mt-1">Boş bırakılırsa seçilen cinsiyete uygun varsayılan görsel kullanılır.</p>
+                <p className="text-[10px] text-slate-500 mt-1">Boş bırakılırsa aşağıda seçilen cinsiyete uygun varsayılan görsel kullanılır.</p>
               </div>
 
               {/* Cinsiyet Seçimi */}
