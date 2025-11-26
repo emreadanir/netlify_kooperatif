@@ -8,7 +8,7 @@ import {
   Save, Loader2, Layout, Menu, Plus, Trash2,
   ArrowLeft, Image as ImageIcon, Type, 
   Facebook, Instagram, Globe, Linkedin, Youtube,
-  MapPin, Phone, Mail 
+  MapPin, Phone, Mail, Globe2
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -45,6 +45,7 @@ interface NavbarSettings {
   logoText: string;
   logoSubText: string;
   faviconUrl: string; 
+  browserTitle?: string; // ⭐️ YENİ: Tarayıcı Başlığı
   menuItems: MenuItem[];
 }
 
@@ -53,7 +54,6 @@ interface SocialLinkItem {
   url: string;
 }
 
-// Footer İletişim Tipleri
 interface ContactInfoSettings {
   address: string;
   phones: string[];
@@ -84,6 +84,7 @@ const DEFAULT_SETTINGS: LayoutSettings = {
     logoText: 'S. S. NİLÜFER İLÇESİ',
     logoSubText: 'ESNAF VE SANATKARLAR KREDİ VE KEFALET KOOPERATİFİ',
     faviconUrl: '/favicon.ico', 
+    browserTitle: 'S. S. Nilüfer İlçesi Esnaf ve Sanatkarlar Kredi ve Kefalet Kooperatifi', // Varsayılan
     menuItems: [
       { id: '1', name: 'Anasayfa', href: '/', subItems: [] },
       { 
@@ -183,6 +184,8 @@ export default function SiteGorunumuYonetimi() {
             navbar: { 
                 ...DEFAULT_SETTINGS.navbar, 
                 ...(data.navbar || {}),
+                // Eğer veritabanında browserTitle yoksa varsayılanı kullanma, boş bırak ki placeholder görünsün
+                browserTitle: data.navbar?.browserTitle || '',
                 faviconUrl: data.navbar?.faviconUrl || DEFAULT_SETTINGS.navbar.faviconUrl
             },
             footer: { 
@@ -351,6 +354,24 @@ export default function SiteGorunumuYonetimi() {
                     </h3>
                     <div className="grid gap-6 md:grid-cols-2">
                         
+                        {/* ⭐️ YENİ EKLENEN ALAN: TARAYICI BAŞLIĞI */}
+                        <div className="md:col-span-2 space-y-2 bg-slate-900/30 p-4 rounded-xl border border-slate-700/50">
+                            <label className="block text-xs font-bold text-emerald-400 uppercase mb-1 flex items-center gap-2">
+                                <Globe2 size={14} /> Tarayıcı Sekme Başlığı (Site Adı)
+                            </label>
+                            <input 
+                                type="text" 
+                                className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2.5 text-white text-sm focus:border-emerald-500 outline-none"
+                                value={settings.navbar.browserTitle}
+                                onChange={(e) => setSettings(prev => ({ ...prev, navbar: { ...prev.navbar, browserTitle: e.target.value } }))}
+                                placeholder="Örn: S. S. Nilüfer ESKKK"
+                            />
+                            <p className="text-[10px] text-slate-400 leading-relaxed">
+                                Bu alan, tarayıcının üst sekmesinde ve Google arama sonuçlarında görünecek olan <b>TAM</b> site adıdır. 
+                                Eğer burayı boş bırakırsanız, yukarıdaki "Site Ana Başlığı" kullanılır.
+                            </p>
+                        </div>
+
                         <div>
                             <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Logo URL</label>
                             <div className="flex gap-3">
@@ -388,7 +409,7 @@ export default function SiteGorunumuYonetimi() {
                         {/* Başlıklar */}
                         <div className="space-y-4 md:col-span-2">
                             <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Site Ana Başlığı</label>
+                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Site Ana Başlığı (Logonun Yanındaki)</label>
                                 <input 
                                     type="text" 
                                     className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:border-indigo-500 outline-none"
