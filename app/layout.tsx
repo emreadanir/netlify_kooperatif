@@ -9,6 +9,10 @@ import ThemeUpdater from "@/components/ThemeUpdater";
 import { db, appId } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
+// ⭐️ KRİTİK EKLEME: Sayfanın statik (cache) olarak değil, her istekte dinamik sunulmasını sağlar.
+// Netlify'da eski renklerin gelmesini (caching) engeller.
+export const dynamic = 'force-dynamic';
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -33,8 +37,7 @@ export const metadata: Metadata = {
 async function getThemeData() {
   try {
     // Not: Sunucu tarafında 'window' olmadığı için appId lib/firebase.ts içindeki
-    // varsayılan değere ('kooperatif-v1') düşecektir. Eğer canlıda farklı bir ID 
-    // kullanıyorsanız, environment variable kullanmanız gerekebilir.
+    // varsayılan değere ('kooperatif-v1') düşecektir.
     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'site_settings', 'theme');
     const snapshot = await getDoc(docRef);
     
@@ -51,7 +54,7 @@ interface RootLayoutProps {
   children: React.ReactNode; 
 }
 
-// Async Server Component'e çevirdik
+// Async Server Component
 export default async function RootLayout({
   children,
 }: RootLayoutProps) {
@@ -59,7 +62,6 @@ export default async function RootLayout({
   const theme = await getThemeData();
 
   // Eğer tema varsa CSS değişkenlerini oluştur
-  // Bu style bloğu, globals.css'teki :root tanımlarını ezecektir.
   const serverThemeStyles = theme ? `
     :root {
       --primary: ${theme.primary};
@@ -74,7 +76,6 @@ export default async function RootLayout({
     <html lang="tr">
       <head>
         {/* Sunucu tarafında oluşturulan stilleri en başa ekliyoruz */}
-        {/* Bu sayede sayfa yüklenir yüklenmez doğru renkler görünür */}
         {serverThemeStyles && (
           <style dangerouslySetInnerHTML={{ __html: serverThemeStyles }} />
         )}
@@ -82,8 +83,6 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* FaviconUpdater ve ThemeUpdater client tarafında çalışmaya devam eder */}
-        {/* ThemeUpdater, sayfadayken yapılan anlık değişiklikleri yakalamak için gereklidir */}
         <FaviconUpdater />
         <ThemeUpdater />
         
