@@ -60,13 +60,20 @@ export async function generateMetadata(): Promise<Metadata> {
   const dbDesc = layout?.footer?.description || defaultDesc;
   const dbIcon = layout?.navbar?.faviconUrl || defaultIcon;
 
+  // İkon türünü dosya uzantısına göre belirle (Browser'a ipucu vermek için)
+  // Bu, tarayıcının doğru dosyayı tanımasına yardımcı olur ve önbellek sorunlarını azaltır.
+  const iconType = dbIcon.endsWith('.ico') ? 'image/x-icon' : 
+                   dbIcon.endsWith('.svg') ? 'image/svg+xml' : 
+                   dbIcon.endsWith('.png') ? 'image/png' : 
+                   'image/webp'; // Varsayılan webp kabul ediyoruz
+
   return {
     title: dbTitle,
     description: dbDesc,
     icons: {
-      icon: dbIcon, // ⭐️ Tarayıcı ilk yüklemede bu ikonu görecek
-      shortcut: dbIcon,
-      apple: dbIcon,
+      icon: { url: dbIcon, type: iconType },
+      shortcut: { url: dbIcon, type: iconType },
+      apple: { url: dbIcon, type: iconType },
     },
   };
 }
