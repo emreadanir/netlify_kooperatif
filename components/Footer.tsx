@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Phone, Mail, MapPin, Facebook, Instagram, ChevronRight, ArrowRight, Linkedin, Youtube, Globe } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db, appId } from '@/lib/firebase';
-import { useSiteSettings } from '@/components/SiteContext'; // ⭐️ Context Hook'u eklendi
+import { useSiteSettings } from '@/components/SiteContext';
 
 // X İkonu
 const XIcon = ({ size = 18, className = "" }: { size?: number, className?: string }) => (
@@ -98,10 +98,9 @@ const socialColorClass: Record<string, string> = {
 };
 
 const Footer: React.FC = () => {
-  // ⭐️ Context'ten sunucu verisini al
   const siteSettings = useSiteSettings();
+  const [isLoading, setIsLoading] = useState(true);
 
-  // ⭐️ State'i başlatırken sunucu verisini kullan
   const [settings, setSettings] = useState<FooterSettings>(() => {
       let initial = { ...DEFAULT_FOOTER };
       
@@ -115,7 +114,6 @@ const Footer: React.FC = () => {
               legislationLinksTitle: footerData.legislationLinksTitle || initial.legislationLinksTitle,
           };
       }
-      // Logo bilgilerini Navbar ayarlarından alıyoruz
       if (siteSettings?.navbar) {
           initial.logoUrl = siteSettings.navbar.logoUrl || initial.logoUrl;
           initial.logoText = siteSettings.navbar.logoText || initial.logoText;
@@ -123,6 +121,13 @@ const Footer: React.FC = () => {
       }
       return initial;
   });
+
+  // ⭐️ DÜZELTME: Eğer siteSettings dolu geldiyse loading'i kapat
+  useEffect(() => {
+    if (siteSettings?.footer) {
+        setIsLoading(false);
+    }
+  }, [siteSettings]);
 
   const [isMounted, setIsMounted] = useState(false);
 
@@ -136,7 +141,6 @@ const Footer: React.FC = () => {
     setIsMounted(true);
     if (!db) return;
 
-    // 1. Site Ayarları
     const layoutRef = doc(db, 'artifacts', appId, 'public', 'data', 'site_settings', 'layout');
     const unsubLayout = onSnapshot(layoutRef, (docSnap) => {
         if (docSnap.exists()) {
@@ -153,14 +157,13 @@ const Footer: React.FC = () => {
                 };
             });
         }
-    });
+        setIsLoading(false);
+    }, () => setIsLoading(false));
 
-    // 2. İletişim Bilgileri
     const contactRef = doc(db, 'artifacts', appId, 'public', 'data', 'page-content', 'contact-info');
     const unsubContact = onSnapshot(contactRef, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
-            
             const phones = data.phones?.map((p: any) => p.number) || (data.phone ? [data.phone] : []);
             const emails = data.emails?.map((e: any) => e.address) || (data.email ? [data.email] : []);
             const address = data.address ? `${data.address}\n${data.city || ''}` : 'Adres bilgisi yüklenemedi.';
@@ -209,18 +212,25 @@ const Footer: React.FC = () => {
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           
-          {/* 1. SÜTUN: KURUMSAL KİMLİK */}
+          {/* 1. SÜTUN */}
           <div className="space-y-6">
             <Link href="/" className="flex items-center cursor-pointer group w-fit gap-4" onClick={scrollToTop}>
               <div className="relative flex-shrink-0">
                 <div className="absolute inset-0 bg-gradient-to-br from-secondary/40 via-accent/40 to-transparent rounded-full blur-2xl opacity-0 group-hover:opacity-70 transition-opacity duration-500 transform scale-150"></div>
                 <img src={settings.logoUrl || '/kooperatif_logo.webp'} alt="Logo" className="h-24 w-24 object-contain drop-shadow-2xl transition-transform duration-300 group-hover:scale-105 relative z-10" />
               </div>
-              <div className="flex flex-col relative">
-                <span className="font-bold text-sm text-foreground leading-tight tracking-wide group-hover:text-secondary transition-colors drop-shadow-md">{settings.logoText}</span>
-                <span className="text-[9px] text-foreground/60 font-bold tracking-[0.2em] uppercase group-hover:text-foreground transition-colors">{settings.logoSubText}</span>
-                <div className="absolute -bottom-2 left-0 w-0 h-px bg-gradient-to-r from-secondary to-transparent group-hover:w-full transition-all duration-700 ease-out opacity-50"></div>
-              </div>
+              {isLoading && !siteSettings?.footer ? (
+                  <div className="flex flex-col gap-2">
+                      <div className="h-4 w-32 bg-foreground/10 rounded animate-pulse"></div>
+                      <div className="h-2 w-20 bg-foreground/10 rounded animate-pulse"></div>
+                  </div>
+              ) : (
+                <div className="flex flex-col relative">
+                    <span className="font-bold text-sm text-foreground leading-tight tracking-wide group-hover:text-secondary transition-colors drop-shadow-md">{settings.logoText}</span>
+                    <span className="text-[9px] text-foreground/60 font-bold tracking-[0.2em] uppercase group-hover:text-foreground transition-colors">{settings.logoSubText}</span>
+                    <div className="absolute -bottom-2 left-0 w-0 h-px bg-gradient-to-r from-secondary to-transparent group-hover:w-full transition-all duration-700 ease-out opacity-50"></div>
+                </div>
+              )}
             </Link>
             
             <p className="text-foreground/60 text-sm leading-relaxed">{settings.description}</p>
@@ -248,7 +258,7 @@ const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* 2. SÜTUN: HIZLI ERİŞİM */}
+          {/* 2. SÜTUN */}
           <div>
             <h4 className="text-foreground font-bold text-lg mb-6 flex items-center gap-2">
               <span className="w-8 h-1 bg-secondary rounded-full"></span> {settings.quickLinksTitle}
@@ -264,7 +274,7 @@ const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* 3. SÜTUN: MEVZUAT */}
+          {/* 3. SÜTUN */}
           <div>
             <h4 className="text-foreground font-bold text-lg mb-6 flex items-center gap-2">
               <span className="w-8 h-1 bg-primary rounded-full"></span> {settings.legislationLinksTitle}
@@ -280,13 +290,12 @@ const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* 4. SÜTUN: İLETİŞİM */}
+          {/* 4. SÜTUN */}
           <div>
             <h4 className="text-foreground font-bold text-lg mb-6 flex items-center gap-2">
               <span className="w-8 h-1 bg-accent rounded-full"></span> Bize Ulaşın
             </h4>
             <ul className="space-y-5">
-              {/* Adres */}
               <li className="flex items-start gap-4 group">
                 <div className="w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center text-secondary shrink-0 group-hover:border-secondary/50 transition-colors"><MapPin size={20} /></div>
                 <span className="text-foreground/60 text-sm leading-relaxed group-hover:text-foreground transition-colors whitespace-pre-line">
@@ -294,7 +303,6 @@ const Footer: React.FC = () => {
                 </span>
               </li>
               
-              {/* Telefonlar */}
               {settings.contactInfo.phones.length > 0 && (
                 <li className="flex items-start gap-4 group">
                     <div className="w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center text-primary shrink-0 group-hover:border-primary/50 transition-colors">
@@ -310,7 +318,6 @@ const Footer: React.FC = () => {
                 </li>
               )}
               
-              {/* E-Postalar */}
               {settings.contactInfo.emails.length > 0 && (
                 <li className="flex items-start gap-4 group">
                     <div className="w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center text-accent shrink-0 group-hover:border-accent/50 transition-colors">
@@ -329,7 +336,6 @@ const Footer: React.FC = () => {
           </div>
         </div>
 
-        {/* --- ALT BİLGİ --- */}
         <div className="border-t border-foreground/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 relative">
           <div className="absolute top-[-1px] left-0 w-full h-px bg-gradient-to-r from-transparent via-foreground/30 to-transparent"></div>
           <p className="text-foreground/50 text-sm text-center md:text-left">

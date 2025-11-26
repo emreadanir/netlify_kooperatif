@@ -63,7 +63,11 @@ const Home: React.FC = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isLoadingAnnouncements, setIsLoadingAnnouncements] = useState(true);
+  
+  // ⭐️ DÜZELTME: Sayfa verisi için loading state eklendi
   const [pageData, setPageData] = useState<HomePageData>(DEFAULT_HOME_DATA);
+  const [isPageLoading, setIsPageLoading] = useState(true); 
+  
   const [user, setUser] = useState<any>(null);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
 
@@ -102,7 +106,9 @@ const Home: React.FC = () => {
                 }
             });
         }
-    });
+        // Veri geldiğinde loading'i kapat
+        setIsPageLoading(false);
+    }, () => setIsPageLoading(false));
 
     return () => {
         unsubAnnouncements();
@@ -123,12 +129,25 @@ const Home: React.FC = () => {
   const handlePrev = () => { if (announcements.length > 0) setActiveIndex((current) => (current - 1 + announcements.length) % announcements.length); };
 
   return (
-    // ⭐️ GÜNCELLEME: bg-[#0f172a] yerine bg-background, text-gray-100 yerine text-foreground
     <div className="min-h-screen bg-background font-sans text-foreground flex flex-col transition-colors duration-500">
       <Navbar />
 
-      <main className="flex-grow relative overflow-hidden">
-        {/* Arkaplan Efektleri - Renkleri dinamik yapalım */}
+      {/* ⭐️ DÜZELTME: Ana içerik yüklenene kadar loading ekranı veya skeleton göster */}
+      {isPageLoading ? (
+         <div className="flex-grow flex items-center justify-center min-h-[600px]">
+            <div className="flex flex-col items-center gap-4">
+               <div className="relative">
+                  <div className="absolute inset-0 bg-primary/30 blur-xl rounded-full animate-pulse"></div>
+                  <div className="relative bg-foreground/5 p-4 rounded-2xl border border-foreground/10 shadow-2xl backdrop-blur-sm">
+                      <Loader2 className="w-12 h-12 text-primary animate-spin" />
+                  </div>
+               </div>
+               <p className="text-foreground/50 text-sm font-medium animate-pulse">İçerik Yükleniyor...</p>
+            </div>
+         </div>
+      ) : (
+      <main className="flex-grow relative overflow-hidden animate-in fade-in duration-700">
+        {/* Arkaplan Efektleri */}
         <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
             <div className="absolute top-[-10%] left-[-10%] w-[700px] h-[700px] bg-secondary/10 rounded-full blur-[120px] mix-blend-screen"></div>
             <div className="absolute top-[5%] right-[-5%] w-[800px] h-[800px] bg-primary/20 rounded-full blur-[100px] mix-blend-screen"></div>
@@ -140,14 +159,12 @@ const Home: React.FC = () => {
             
             {/* SOL TARAF (DİNAMİK HERO) */}
             <div className="w-full lg:w-1/2 text-center lg:text-left">
-              {/* ⭐️ GÜNCELLEME: Sabit indigo renkler primary ile değiştirildi */}
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider mb-6">
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
                 {pageData.hero.badge}
               </div>
               <h1 className="text-5xl lg:text-7xl font-extrabold text-foreground leading-tight mb-6 drop-shadow-2xl">
                 {pageData.hero.titlePart1} <br />
-                {/* ⭐️ GÜNCELLEME: Gradient primary ve secondary arasında */}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary via-primary to-secondary">{pageData.hero.titlePart2}</span>
               </h1>
               <p className="text-foreground/60 text-lg lg:text-xl leading-relaxed mb-10 max-w-2xl mx-auto lg:mx-0">
@@ -155,7 +172,6 @@ const Home: React.FC = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-5 justify-center lg:justify-start">
                 <Link href={pageData.hero.button1Url}>
-                  {/* ⭐️ GÜNCELLEME: Buton renkleri */}
                   <button className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-bold text-lg shadow-lg shadow-primary/25 transition-all transform hover:scale-105">
                     {pageData.hero.button1Text}
                   </button>
@@ -172,7 +188,6 @@ const Home: React.FC = () => {
             <div className="w-full lg:w-5/12 relative mt-10 lg:mt-0">
               <div className="absolute inset-0 bg-gradient-to-r from-secondary to-primary rounded-3xl blur-2xl opacity-20 animate-pulse"></div>
               
-              {/* ⭐️ GÜNCELLEME: Kart arka planı foreground/5 (cam efekti) */}
               <div className="relative bg-background/60 backdrop-blur-xl border border-foreground/10 rounded-3xl shadow-2xl flex flex-col h-[500px] overflow-hidden group" onMouseEnter={() => setIsPaused(true)} onMouseLeave={() => setIsPaused(false)}>
                   
                   {/* Başlık */}
@@ -245,7 +260,7 @@ const Home: React.FC = () => {
                       )}
                   </div>
 
-                  {/* Alt Göstergeler (Dots) */}
+                  {/* Alt Göstergeler */}
                   {!isLoadingAnnouncements && announcements.length > 0 && (
                     <div className="bg-background/30 p-4 border-t border-foreground/10 flex justify-center items-center gap-2 z-20 absolute bottom-0 left-0 right-0 backdrop-blur-sm">
                         {announcements.map((_, idx) => (
@@ -258,7 +273,7 @@ const Home: React.FC = () => {
           </div>
         </section>
 
-        {/* ... Hızlı Erişim Kartları (DİNAMİK) ... */}
+        {/* Hızlı Erişim Kartları */}
         <section className="relative z-10 py-20">
            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center mb-16">
@@ -267,7 +282,6 @@ const Home: React.FC = () => {
               </div>
               <div className="grid md:grid-cols-3 gap-8">
                  
-                 {/* KART 1 - Renkleri de temaya bağladık */}
                  <div className="group p-8 bg-foreground/5 hover:bg-foreground/10 border border-foreground/10 hover:border-secondary/30 rounded-3xl transition-all duration-300 hover:shadow-2xl hover:shadow-secondary/10 hover:-translate-y-1 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/10 rounded-full blur-[50px] -mr-16 -mt-16 transition-opacity group-hover:opacity-100 opacity-0"></div>
                     <Users className="w-12 h-12 text-secondary mb-6"/>
@@ -278,7 +292,6 @@ const Home: React.FC = () => {
                     </Link>
                  </div>
 
-                 {/* KART 2 */}
                  <div className="group p-8 bg-foreground/5 hover:bg-foreground/10 border border-foreground/10 hover:border-primary/30 rounded-3xl transition-all duration-300 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-1 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-[50px] -mr-16 -mt-16 transition-opacity group-hover:opacity-100 opacity-0"></div>
                     <FileText className="w-12 h-12 text-primary mb-6"/>
@@ -289,7 +302,6 @@ const Home: React.FC = () => {
                     </Link>
                  </div>
 
-                 {/* KART 3 */}
                  <div className="group p-8 bg-foreground/5 hover:bg-foreground/10 border border-foreground/10 hover:border-accent/30 rounded-3xl transition-all duration-300 hover:shadow-2xl hover:shadow-accent/10 hover:-translate-y-1 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full blur-[50px] -mr-16 -mt-16 transition-opacity group-hover:opacity-100 opacity-0"></div>
                     <ShieldCheck className="w-12 h-12 text-accent mb-6"/>
@@ -304,6 +316,7 @@ const Home: React.FC = () => {
            </div>
         </section>
       </main>
+      )}
 
       {/* DUYURU DETAY MODALI */}
       {selectedAnnouncement && (

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Menu, X, CreditCard, ChevronDown, Calculator, Search } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db, appId } from '@/lib/firebase';
-import { useSiteSettings } from '@/components/SiteContext'; // ⭐️ Context Hook'u eklendi
+import { useSiteSettings } from '@/components/SiteContext'; 
 
 interface SubMenuItem {
     name: string;
@@ -50,17 +50,19 @@ const DEFAULT_NAVBAR: NavbarSettings = {
 };
 
 const Navbar: React.FC = () => {
-  // ⭐️ Context'ten gelen sunucu verisini alıyoruz
   const siteSettings = useSiteSettings();
 
-  // ⭐️ State'i başlatırken öncelikle sunucudan gelen veriyi kullanıyoruz.
-  // Böylece sayfa ilk açıldığında doğru logo ile açılıyor.
-  const [settings, setSettings] = useState<NavbarSettings>(() => {
-      if (siteSettings?.navbar) {
-          return { ...DEFAULT_NAVBAR, ...siteSettings.navbar };
-      }
-      return DEFAULT_NAVBAR;
-  });
+  // ⭐️ DÜZELTME: Başlangıç verisi yoksa yükleniyor durumunu takip etmek için state
+  const [settings, setSettings] = useState<NavbarSettings>(DEFAULT_NAVBAR);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // İlk açılışta sunucu verisini kontrol et
+  useEffect(() => {
+    if (siteSettings?.navbar) {
+      setSettings({ ...DEFAULT_NAVBAR, ...siteSettings.navbar });
+      setIsLoading(false);
+    }
+  }, [siteSettings]);
 
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [openMobileSubmenu, setOpenMobileSubmenu] = useState<string | null>(null);
@@ -75,8 +77,6 @@ const Navbar: React.FC = () => {
   }, []);
 
   // Firestore Realtime Data Fetch
-  // ⭐️ Bu kısım hala gerekli, çünkü kullanıcı sitedeyken admin panelden
-  // bir değişiklik yapılırsa (logo değişirse) anlık olarak yansımasını sağlar.
   useEffect(() => {
     if (!db) return;
     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'site_settings', 'layout');
@@ -88,7 +88,9 @@ const Navbar: React.FC = () => {
                 setSettings(prev => ({ ...prev, ...data.navbar }));
             }
         }
-    });
+        // Veri gelmese bile loading durumunu kapat (varsayılanı göster)
+        setIsLoading(false);
+    }, () => setIsLoading(false));
 
     return () => unsubscribe();
   }, []);
@@ -126,11 +128,20 @@ const Navbar: React.FC = () => {
                   className="h-24 w-24 object-contain drop-shadow-2xl transition-transform duration-300 group-hover:scale-105 relative z-10" 
                 />
             </div>
-            <div className="flex flex-col relative">
-              <span className="font-bold text-lg lg:text-xl text-foreground leading-tight tracking-wide group-hover:text-secondary transition-colors drop-shadow-md">{settings.logoText}</span> 
-              <span className="text-[9px] lg:text-[10px] text-foreground/60 font-bold tracking-[0.2em] uppercase group-hover:text-foreground transition-colors">{settings.logoSubText}</span>
-              <div className="absolute -bottom-2 left-0 w-0 h-px bg-gradient-to-r from-secondary to-transparent group-hover:w-full transition-all duration-700 ease-out opacity-50"></div>
-            </div>
+            
+            {/* ⭐️ DÜZELTME: Skeleton Loading */}
+            {isLoading && !siteSettings?.navbar ? (
+                <div className="flex flex-col gap-2">
+                    <div className="h-5 w-48 bg-foreground/10 rounded animate-pulse"></div>
+                    <div className="h-3 w-32 bg-foreground/10 rounded animate-pulse"></div>
+                </div>
+            ) : (
+                <div className="flex flex-col relative">
+                    <span className="font-bold text-lg lg:text-xl text-foreground leading-tight tracking-wide group-hover:text-secondary transition-colors drop-shadow-md">{settings.logoText}</span> 
+                    <span className="text-[9px] lg:text-[10px] text-foreground/60 font-bold tracking-[0.2em] uppercase group-hover:text-foreground transition-colors">{settings.logoSubText}</span>
+                    <div className="absolute -bottom-2 left-0 w-0 h-px bg-gradient-to-r from-secondary to-transparent group-hover:w-full transition-all duration-700 ease-out opacity-50"></div>
+                </div>
+            )}
           </Link>
 
           {/* --- MASAÜSTÜ MENÜ --- */}
@@ -164,7 +175,6 @@ const Navbar: React.FC = () => {
               </div>
             ))}
             
-            {/* ONLINE İŞLEMLER (Sabit) */}
             <div className="pl-6 ml-2 relative group/online">
               <button className="relative overflow-hidden bg-gradient-to-r from-secondary to-secondary/80 hover:opacity-90 text-white px-6 py-3 rounded-full font-bold transition-all shadow-lg shadow-secondary/20 hover:shadow-secondary/40 hover:-translate-y-0.5 flex items-center gap-2 text-sm border border-white/10 z-50">
                 <div className="absolute inset-0 -translate-x-full group-hover/online:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/25 to-transparent z-10"></div>
@@ -231,7 +241,6 @@ const Navbar: React.FC = () => {
               </div>
             ))}
             
-            {/* Mobil Online İşlemler */}
             <div className="pt-6 px-2">
                <button onClick={() => setIsOnlineMobileOpen(!isOnlineMobileOpen)} className="w-full bg-gradient-to-r from-secondary to-secondary/80 text-white px-4 py-4 rounded-xl font-bold flex justify-between items-center shadow-lg shadow-secondary/30 active:scale-[0.98] transition-transform">
                   <div className="flex items-center gap-3"><CreditCard size={20} /><span>Online İşlemler</span></div>
