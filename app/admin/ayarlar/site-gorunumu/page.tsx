@@ -3,11 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db, appId } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // ⭐️ Storage fonksiyonları
+import { auth, db, appId, storage } from '@/lib/firebase'; // ⭐️ Storage importu
 import { 
   Save, Loader2, Layout, Menu, Plus, Trash2, 
   ArrowLeft, Image as ImageIcon, Type, 
-  Facebook, Instagram, Globe, Linkedin, Youtube
+  Facebook, Instagram, Globe, Linkedin, Youtube,
+  Upload // ⭐️ Upload ikonu
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -43,7 +45,7 @@ interface NavbarSettings {
   logoUrl: string;
   logoText: string;
   logoSubText: string;
-  faviconUrl: string; // ⭐️ YENİ: Favicon URL
+  faviconUrl: string; 
   menuItems: MenuItem[];
 }
 
@@ -74,7 +76,7 @@ const DEFAULT_SETTINGS: LayoutSettings = {
     logoUrl: '/kooperatif_logo.webp',
     logoText: 'S. S. NİLÜFER İLÇESİ',
     logoSubText: 'ESNAF VE SANATKARLAR KREDİ VE KEFALET KOOPERATİFİ',
-    faviconUrl: '/favicon.ico', // ⭐️ Varsayılan Favicon
+    faviconUrl: '/favicon.ico', 
     menuItems: [
       { id: '1', name: 'Anasayfa', href: '/', subItems: [] },
       { 
@@ -145,6 +147,10 @@ export default function SiteGorunumuYonetimi() {
   const [saving, setSaving] = useState(false);
   const [user, setUser] = useState<any>(null);
 
+  // ⭐️ YENİ: Yükleme durumu state'leri
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingFavicon, setUploadingFavicon] = useState(false);
+
   // Auth
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -208,6 +214,44 @@ export default function SiteGorunumuYonetimi() {
       alert("Kaydederken bir hata oluştu.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  // ⭐️ YENİ: Dosya Yükleme Fonksiyonu
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'favicon') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isLogo = type === 'logo';
+    if (isLogo) setUploadingLogo(true); else setUploadingFavicon(true);
+
+    try {
+        // Dosya yolu: artifacts/{appId}/public/assets/site-identity/{timestamp}_{filename}
+        // Benzersiz isim olması için timestamp ekliyoruz.
+        const path = `artifacts/${appId}/public/assets/site-identity/${Date.now()}_${file.name}`;
+        const storageRef = ref(storage, path);
+        
+        // Yükleme işlemi
+        const snapshot = await uploadBytes(storageRef, file);
+        
+        // URL alma
+        const downloadURL = await getDownloadURL(snapshot.ref);
+
+        // State güncelleme
+        setSettings(prev => ({
+            ...prev,
+            navbar: {
+                ...prev.navbar,
+                [isLogo ? 'logoUrl' : 'faviconUrl']: downloadURL
+            }
+        }));
+    } catch (err) {
+        console.error("Dosya yükleme hatası:", err);
+        alert("Dosya yüklenirken bir hata oluştu.");
+    } finally {
+        if (isLogo) setUploadingLogo(false); else setUploadingFavicon(false);
+        // Input'u temizle ki aynı dosyayı tekrar seçebilsin
+        e.target.value = '';
     }
   };
 
@@ -302,10 +346,11 @@ export default function SiteGorunumuYonetimi() {
                         <ImageIcon size={20} className="text-amber-400" /> Site Kimliği
                     </h3>
                     <div className="grid gap-6 md:grid-cols-2">
-                        {/* Logo */}
+                        
+                        {/* ⭐️ LOGO ALANI GÜNCELLENDİ */}
                         <div>
-                            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Logo URL</label>
-                            <div className="flex gap-3">
+                            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Logo</label>
+                            <div className="flex gap-3 mb-2">
                                 <div className="w-12 h-12 bg-slate-900 rounded-lg border border-slate-700 flex items-center justify-center shrink-0 overflow-hidden">
                                     <img src={settings.navbar.logoUrl} alt="Logo" className="w-8 h-8 object-contain" />
                                 </div>
@@ -314,14 +359,21 @@ export default function SiteGorunumuYonetimi() {
                                     className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-3 text-white text-sm focus:border-indigo-500 outline-none"
                                     value={settings.navbar.logoUrl}
                                     onChange={(e) => setSettings(prev => ({ ...prev, navbar: { ...prev.navbar, logoUrl: e.target.value } }))}
+                                    placeholder="https://..."
                                 />
                             </div>
+                            {/* Yükleme Butonu */}
+                            <label className={`flex items-center justify-center gap-2 w-full py-2 border border-dashed border-slate-600 rounded-lg cursor-pointer hover:bg-slate-800/50 transition-colors ${uploadingLogo ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                {uploadingLogo ? <Loader2 size={14} className="animate-spin text-indigo-400" /> : <Upload size={14} className="text-indigo-400" />}
+                                <span className="text-xs text-slate-400 font-medium">{uploadingLogo ? 'Yükleniyor...' : 'Bilgisayardan Logo Yükle'}</span>
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, 'logo')} disabled={uploadingLogo} />
+                            </label>
                         </div>
                         
-                        {/* ⭐️ YENİ: Favicon */}
+                        {/* ⭐️ FAVICON ALANI GÜNCELLENDİ */}
                         <div>
-                            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Favicon URL (Sekme İkonu)</label>
-                            <div className="flex gap-3">
+                            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Favicon (Sekme İkonu)</label>
+                            <div className="flex gap-3 mb-2">
                                 <div className="w-12 h-12 bg-slate-900 rounded-lg border border-slate-700 flex items-center justify-center shrink-0 overflow-hidden">
                                     <img src={settings.navbar.faviconUrl} alt="Favicon" className="w-6 h-6 object-contain" />
                                 </div>
@@ -333,6 +385,12 @@ export default function SiteGorunumuYonetimi() {
                                     placeholder="/favicon.ico"
                                 />
                             </div>
+                            {/* Yükleme Butonu */}
+                            <label className={`flex items-center justify-center gap-2 w-full py-2 border border-dashed border-slate-600 rounded-lg cursor-pointer hover:bg-slate-800/50 transition-colors ${uploadingFavicon ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                {uploadingFavicon ? <Loader2 size={14} className="animate-spin text-indigo-400" /> : <Upload size={14} className="text-indigo-400" />}
+                                <span className="text-xs text-slate-400 font-medium">{uploadingFavicon ? 'Yükleniyor...' : 'Bilgisayardan Favicon Yükle'}</span>
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, 'favicon')} disabled={uploadingFavicon} />
+                            </label>
                         </div>
 
                         {/* Başlıklar */}
