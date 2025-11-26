@@ -34,9 +34,11 @@ export default function DenetimKuruluYonetimi() {
   
   // Form State'leri
   const [name, setName] = useState('');
-  // ⭐️ DEĞİŞİKLİK: Varsayılan ünvan sabitlendi
+  // Ünvan sabitlendi
   const [title, setTitle] = useState('Denetim Kurulu Üyesi');
   const [image, setImage] = useState(''); 
+  // Cinsiyet State'i (Varsayılan Erkek)
+  const [gender, setGender] = useState<'male' | 'female'>('male');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Düzenleme ve Sürükleme State'leri
@@ -118,15 +120,17 @@ export default function DenetimKuruluYonetimi() {
   // Form İşlemleri
   const resetForm = () => {
     setName('');
-    setTitle('Denetim Kurulu Üyesi'); // ⭐️ DEĞİŞİKLİK: Resetlerken de sabitle
+    setTitle('Denetim Kurulu Üyesi');
     setImage('');
+    setGender('male');
     setEditingId(null);
   };
 
   const handleEditClick = (item: AuditMember) => {
     setName(item.name);
-    setTitle('Denetim Kurulu Üyesi'); // ⭐️ DEĞİŞİKLİK: Düzenlerken de sabitle (Eskiden farklı olsa bile düzeltir)
+    setTitle('Denetim Kurulu Üyesi'); 
     setImage(item.image);
+    setGender('male'); // Eski kayıtlarda cinsiyet verisi olmayabilir, varsayılan erkek
     setEditingId(item.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -137,12 +141,22 @@ export default function DenetimKuruluYonetimi() {
 
     setIsSubmitting(true);
     try {
-      const defaultImage = `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}&backgroundColor=c0aede`;
+      // Fotoğraf URL'si girilmemişse cinsiyete göre sabit ikon ata
+      let finalImage = image;
+      if (!finalImage) {
+          if (gender === 'female') {
+              // Kadın için boş profil görseli (Flaticon vb. bir kaynak veya local asset)
+              finalImage = 'https://cdn-icons-png.flaticon.com/512/3135/3135789.png'; 
+          } else {
+              // Erkek için boş profil görseli
+              finalImage = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
+          }
+      }
       
       const docData = {
         name,
-        title, // Sabit değer gidecek
-        image: image || defaultImage,
+        title, // Sabit değer
+        image: finalImage,
         ...(editingId ? {} : { createdAt: serverTimestamp(), order: members.length + 1 })
       };
 
@@ -235,13 +249,42 @@ export default function DenetimKuruluYonetimi() {
                 <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Ünvan / Görev</label>
                 <div className="relative">
                     <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
-                    {/* ⭐️ DEĞİŞİKLİK: Input readOnly yapıldı ve stil düzenlendi */}
+                    {/* Input readOnly yapıldı */}
                     <input 
                     type="text" 
                     value={title}
                     readOnly
                     className="w-full bg-slate-900/30 border border-slate-700 rounded-lg pl-10 pr-3 py-2 text-slate-400 focus:outline-none cursor-not-allowed text-sm font-medium"
                     />
+                </div>
+              </div>
+
+              {/* Cinsiyet Seçimi */}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Cinsiyet (Varsayılan Fotoğraf İçin)</label>
+                <div className="flex gap-4">
+                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all flex-1 ${gender === 'male' ? 'bg-cyan-500/20 border-cyan-500 text-white' : 'bg-slate-900/50 border-slate-700 text-slate-400 hover:bg-slate-800'}`}>
+                        <input 
+                            type="radio" 
+                            name="gender" 
+                            value="male" 
+                            checked={gender === 'male'} 
+                            onChange={() => setGender('male')}
+                            className="hidden" 
+                        />
+                        <span className="text-sm font-medium">Erkek</span>
+                    </label>
+                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all flex-1 ${gender === 'female' ? 'bg-pink-500/20 border-pink-500 text-white' : 'bg-slate-900/50 border-slate-700 text-slate-400 hover:bg-slate-800'}`}>
+                        <input 
+                            type="radio" 
+                            name="gender" 
+                            value="female" 
+                            checked={gender === 'female'} 
+                            onChange={() => setGender('female')}
+                            className="hidden" 
+                        />
+                        <span className="text-sm font-medium">Kadın</span>
+                    </label>
                 </div>
               </div>
 
@@ -254,7 +297,7 @@ export default function DenetimKuruluYonetimi() {
                   className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500 text-sm"
                   placeholder="https://..."
                 />
-                <p className="text-[10px] text-slate-500 mt-1">Boş bırakılırsa otomatik bir avatar atanır.</p>
+                <p className="text-[10px] text-slate-500 mt-1">Boş bırakılırsa yukarıda seçilen cinsiyete uygun varsayılan görsel kullanılır.</p>
               </div>
 
               <button 

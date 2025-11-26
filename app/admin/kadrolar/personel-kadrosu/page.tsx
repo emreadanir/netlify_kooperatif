@@ -38,6 +38,8 @@ export default function PersonelKadrosuYonetimi() {
   const [title, setTitle] = useState('Memur');
   const [image, setImage] = useState(''); 
   const [category, setCategory] = useState<'manager' | 'accounting' | 'officer' | 'service'>('officer');
+  // Cinsiyet State'i (Varsayılan Erkek)
+  const [gender, setGender] = useState<'male' | 'female'>('male');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Düzenleme ve Sürükleme State'leri
@@ -115,7 +117,7 @@ export default function PersonelKadrosuYonetimi() {
     }
   };
 
-  // ⭐️ YENİ: Kategori değişince unvanı otomatik ayarla
+  // Kategori değişince unvanı otomatik ayarla
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newCategory = e.target.value as any;
     setCategory(newCategory);
@@ -145,6 +147,7 @@ export default function PersonelKadrosuYonetimi() {
     setTitle('Memur');
     setImage('');
     setCategory('officer');
+    setGender('male');
     setEditingId(null);
   };
 
@@ -153,6 +156,7 @@ export default function PersonelKadrosuYonetimi() {
     setTitle(item.title);
     setImage(item.image);
     setCategory(item.category);
+    setGender('male'); // Varsayılan olarak erkek (eski kayıtlarda yoksa)
     setEditingId(item.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -163,17 +167,22 @@ export default function PersonelKadrosuYonetimi() {
 
     setIsSubmitting(true);
     try {
-      // Kategoriye göre arka plan rengi seçimi (Avatar için)
-      let bgColor = 'c0aede';
-      if (category === 'manager') bgColor = 'b6e3f4'; // Mavi (Müdür)
-      if (category === 'accounting') bgColor = 'ffdfbf'; // Turuncu (Muhasebe)
-      
-      const defaultImage = `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}&backgroundColor=${bgColor}`;
+      // Fotoğraf URL'si girilmemişse cinsiyete göre sabit ikon ata
+      let finalImage = image;
+      if (!finalImage) {
+          if (gender === 'female') {
+              // Kadın için boş profil görseli
+              finalImage = 'https://cdn-icons-png.flaticon.com/512/3135/3135789.png'; 
+          } else {
+              // Erkek için boş profil görseli
+              finalImage = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
+          }
+      }
       
       const docData = {
         name,
         title,
-        image: image || defaultImage,
+        image: finalImage,
         category,
         ...(editingId ? {} : { createdAt: serverTimestamp(), order: members.length + 1 })
       };
@@ -281,7 +290,7 @@ export default function PersonelKadrosuYonetimi() {
                     <select 
                     value={category}
                     onChange={handleCategoryChange}
-                    className="w-full bg-slate-900/50 border border-slate-600 rounded-lg pl-10 pr-3 py-2 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm appearance-none"
+                    className="w-full bg-slate-900/50 border border-slate-600 rounded-lg pl-10 pr-3 py-2 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm appearance-none cursor-pointer"
                     >
                         <option value="manager">Kooperatif Müdürü</option>
                         <option value="accounting">Muhasebe Servisi</option>
@@ -298,9 +307,8 @@ export default function PersonelKadrosuYonetimi() {
                     <select 
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="w-full bg-slate-900/50 border border-slate-600 rounded-lg pl-10 pr-3 py-2 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm appearance-none"
+                    className="w-full bg-slate-900/50 border border-slate-600 rounded-lg pl-10 pr-3 py-2 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm appearance-none cursor-pointer"
                     >
-                        {/* ⭐️ DEĞİŞİKLİK: Kategoriye göre özel filtreleme */}
                         {category === 'manager' && (
                             <option value="Kooperatif Müdürü">Kooperatif Müdürü</option>
                         )}
@@ -335,7 +343,36 @@ export default function PersonelKadrosuYonetimi() {
                   className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500 text-sm"
                   placeholder="https://..."
                 />
-                <p className="text-[10px] text-slate-500 mt-1">Boş bırakılırsa otomatik bir avatar atanır.</p>
+                <p className="text-[10px] text-slate-500 mt-1">Boş bırakılırsa seçilen cinsiyete uygun varsayılan görsel kullanılır.</p>
+              </div>
+
+              {/* Cinsiyet Seçimi */}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Cinsiyet (Varsayılan Fotoğraf İçin)</label>
+                <div className="flex gap-4">
+                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all flex-1 ${gender === 'male' ? 'bg-indigo-500/20 border-indigo-500 text-white' : 'bg-slate-900/50 border-slate-700 text-slate-400 hover:bg-slate-800'}`}>
+                        <input 
+                            type="radio" 
+                            name="gender" 
+                            value="male" 
+                            checked={gender === 'male'} 
+                            onChange={() => setGender('male')}
+                            className="hidden" 
+                        />
+                        <span className="text-sm font-medium">Erkek</span>
+                    </label>
+                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all flex-1 ${gender === 'female' ? 'bg-pink-500/20 border-pink-500 text-white' : 'bg-slate-900/50 border-slate-700 text-slate-400 hover:bg-slate-800'}`}>
+                        <input 
+                            type="radio" 
+                            name="gender" 
+                            value="female" 
+                            checked={gender === 'female'} 
+                            onChange={() => setGender('female')}
+                            className="hidden" 
+                        />
+                        <span className="text-sm font-medium">Kadın</span>
+                    </label>
+                </div>
               </div>
 
               <button 

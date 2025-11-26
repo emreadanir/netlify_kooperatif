@@ -52,14 +52,18 @@ const DEFAULT_NAVBAR: NavbarSettings = {
 const Navbar: React.FC = () => {
   const siteSettings = useSiteSettings();
 
-  // ⭐️ DÜZELTME: Başlangıç verisi yoksa yükleniyor durumunu takip etmek için state
-  const [settings, setSettings] = useState<NavbarSettings>(DEFAULT_NAVBAR);
-  const [isLoading, setIsLoading] = useState(true);
+  // ⭐️ DÜZELTME 1: Loading durumu siteSettings varlığına göre belirleniyor
+  const [isLoading, setIsLoading] = useState(!siteSettings?.navbar);
+  const [settings, setSettings] = useState<NavbarSettings>(() => {
+      if (siteSettings?.navbar) {
+          return { ...DEFAULT_NAVBAR, ...siteSettings.navbar };
+      }
+      return DEFAULT_NAVBAR;
+  });
 
-  // İlk açılışta sunucu verisini kontrol et
+  // Eğer SSR'den veri geldiyse loading'i kapat
   useEffect(() => {
     if (siteSettings?.navbar) {
-      setSettings({ ...DEFAULT_NAVBAR, ...siteSettings.navbar });
       setIsLoading(false);
     }
   }, [siteSettings]);
@@ -88,7 +92,7 @@ const Navbar: React.FC = () => {
                 setSettings(prev => ({ ...prev, ...data.navbar }));
             }
         }
-        // Veri gelmese bile loading durumunu kapat (varsayılanı göster)
+        // Veri gelmese bile loading durumunu kapat
         setIsLoading(false);
     }, () => setIsLoading(false));
 
@@ -129,8 +133,8 @@ const Navbar: React.FC = () => {
                 />
             </div>
             
-            {/* ⭐️ DÜZELTME: Skeleton Loading */}
-            {isLoading && !siteSettings?.navbar ? (
+            {/* ⭐️ DÜZELTME 2: Skeleton Loading (Navbar) */}
+            {isLoading ? (
                 <div className="flex flex-col gap-2">
                     <div className="h-5 w-48 bg-foreground/10 rounded animate-pulse"></div>
                     <div className="h-3 w-32 bg-foreground/10 rounded animate-pulse"></div>

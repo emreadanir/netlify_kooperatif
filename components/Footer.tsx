@@ -31,6 +31,7 @@ interface SocialLinkItem {
   url: string;
 }
 
+// ContactInfo artık layout içinde tanımlı
 interface ContactInfo {
   address: string;
   phones: string[];
@@ -73,7 +74,7 @@ const DEFAULT_FOOTER: FooterSettings = {
     logoText: 'S. S. NİLÜFER İLÇESİ',
     logoSubText: 'ESNAF VE SANATKARLAR KREDİ VE KEFALET KOOPERATİFİ',
     contactInfo: {
-      address: 'Yükleniyor...',
+      address: 'Adres yükleniyor...',
       phones: [],
       emails: []
     }
@@ -99,7 +100,9 @@ const socialColorClass: Record<string, string> = {
 
 const Footer: React.FC = () => {
   const siteSettings = useSiteSettings();
-  const [isLoading, setIsLoading] = useState(true);
+  
+  // Genel Loading Durumu
+  const [isLoading, setIsLoading] = useState(!siteSettings?.footer);
 
   const [settings, setSettings] = useState<FooterSettings>(() => {
       let initial = { ...DEFAULT_FOOTER };
@@ -112,6 +115,11 @@ const Footer: React.FC = () => {
               socialLinks: Array.isArray(footerData.socialLinks) ? footerData.socialLinks : [],
               quickLinksTitle: footerData.quickLinksTitle || initial.quickLinksTitle,
               legislationLinksTitle: footerData.legislationLinksTitle || initial.legislationLinksTitle,
+              // ContactInfo verisini de buradan alıyoruz
+              contactInfo: {
+                  ...DEFAULT_FOOTER.contactInfo,
+                  ...(footerData.contactInfo || {})
+              }
           };
       }
       if (siteSettings?.navbar) {
@@ -122,7 +130,6 @@ const Footer: React.FC = () => {
       return initial;
   });
 
-  // ⭐️ DÜZELTME: Eğer siteSettings dolu geldiyse loading'i kapat
   useEffect(() => {
     if (siteSettings?.footer) {
         setIsLoading(false);
@@ -141,6 +148,7 @@ const Footer: React.FC = () => {
     setIsMounted(true);
     if (!db) return;
 
+    // Tek bir yerden (layout) dinleme yapıyoruz
     const layoutRef = doc(db, 'artifacts', appId, 'public', 'data', 'site_settings', 'layout');
     const unsubLayout = onSnapshot(layoutRef, (docSnap) => {
         if (docSnap.exists()) {
@@ -154,34 +162,18 @@ const Footer: React.FC = () => {
                     logoUrl: data.navbar?.logoUrl || prev.logoUrl,
                     logoText: data.navbar?.logoText || prev.logoText,
                     logoSubText: data.navbar?.logoSubText || prev.logoSubText,
+                    contactInfo: {
+                        ...prev.contactInfo,
+                        ...(footerData.contactInfo || {})
+                    }
                 };
             });
         }
         setIsLoading(false);
     }, () => setIsLoading(false));
 
-    const contactRef = doc(db, 'artifacts', appId, 'public', 'data', 'page-content', 'contact-info');
-    const unsubContact = onSnapshot(contactRef, (docSnap) => {
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            const phones = data.phones?.map((p: any) => p.number) || (data.phone ? [data.phone] : []);
-            const emails = data.emails?.map((e: any) => e.address) || (data.email ? [data.email] : []);
-            const address = data.address ? `${data.address}\n${data.city || ''}` : 'Adres bilgisi yüklenemedi.';
-
-            setSettings(prev => ({
-                ...prev,
-                contactInfo: {
-                    address,
-                    phones,
-                    emails
-                }
-            }));
-        }
-    });
-
     return () => {
         unsubLayout();
-        unsubContact();
     };
   }, []);
 
@@ -212,17 +204,18 @@ const Footer: React.FC = () => {
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           
-          {/* 1. SÜTUN */}
+          {/* 1. SÜTUN (Genel Bilgiler) */}
           <div className="space-y-6">
             <Link href="/" className="flex items-center cursor-pointer group w-fit gap-4" onClick={scrollToTop}>
               <div className="relative flex-shrink-0">
                 <div className="absolute inset-0 bg-gradient-to-br from-secondary/40 via-accent/40 to-transparent rounded-full blur-2xl opacity-0 group-hover:opacity-70 transition-opacity duration-500 transform scale-150"></div>
                 <img src={settings.logoUrl || '/kooperatif_logo.webp'} alt="Logo" className="h-24 w-24 object-contain drop-shadow-2xl transition-transform duration-300 group-hover:scale-105 relative z-10" />
               </div>
-              {isLoading && !siteSettings?.footer ? (
-                  <div className="flex flex-col gap-2">
-                      <div className="h-4 w-32 bg-foreground/10 rounded animate-pulse"></div>
-                      <div className="h-2 w-20 bg-foreground/10 rounded animate-pulse"></div>
+              
+              {isLoading ? (
+                  <div className="flex flex-col gap-2 w-32">
+                      <div className="h-4 w-full bg-foreground/10 rounded animate-pulse"></div>
+                      <div className="h-2 w-2/3 bg-foreground/10 rounded animate-pulse"></div>
                   </div>
               ) : (
                 <div className="flex flex-col relative">
@@ -233,7 +226,15 @@ const Footer: React.FC = () => {
               )}
             </Link>
             
-            <p className="text-foreground/60 text-sm leading-relaxed">{settings.description}</p>
+            {isLoading ? (
+                <div className="space-y-2">
+                    <div className="h-3 w-full bg-foreground/10 rounded animate-pulse"></div>
+                    <div className="h-3 w-5/6 bg-foreground/10 rounded animate-pulse"></div>
+                    <div className="h-3 w-4/6 bg-foreground/10 rounded animate-pulse"></div>
+                </div>
+            ) : (
+                <p className="text-foreground/60 text-sm leading-relaxed">{settings.description}</p>
+            )}
 
             <div className="flex gap-4 pt-2 flex-wrap">
               {settings.socialLinks.map((link, idx) => {
@@ -290,11 +291,29 @@ const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* 4. SÜTUN */}
+          {/* 4. SÜTUN - İLETİŞİM BİLGİLERİ */}
           <div>
             <h4 className="text-foreground font-bold text-lg mb-6 flex items-center gap-2">
               <span className="w-8 h-1 bg-accent rounded-full"></span> Bize Ulaşın
             </h4>
+            
+            {isLoading ? (
+                <div className="space-y-5">
+                    <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-foreground/10 animate-pulse shrink-0"></div>
+                        <div className="flex-1 space-y-2 pt-1">
+                            <div className="h-3 w-full bg-foreground/10 rounded animate-pulse"></div>
+                            <div className="h-3 w-2/3 bg-foreground/10 rounded animate-pulse"></div>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-foreground/10 animate-pulse shrink-0"></div>
+                        <div className="flex-1 space-y-2 pt-2">
+                            <div className="h-3 w-3/4 bg-foreground/10 rounded animate-pulse"></div>
+                        </div>
+                    </div>
+                </div>
+            ) : (
             <ul className="space-y-5">
               <li className="flex items-start gap-4 group">
                 <div className="w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center text-secondary shrink-0 group-hover:border-secondary/50 transition-colors"><MapPin size={20} /></div>
@@ -305,10 +324,12 @@ const Footer: React.FC = () => {
               
               {settings.contactInfo.phones.length > 0 && (
                 <li className="flex items-start gap-4 group">
+                    {/* Tek Telefon İkonu */}
                     <div className="w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center text-primary shrink-0 group-hover:border-primary/50 transition-colors">
                         <Phone size={20} />
                     </div>
-                    <div className="flex flex-col gap-1 justify-center min-h-[2.5rem]">
+                    {/* Liste Halinde Telefonlar */}
+                    <div className="flex flex-col gap-1 justify-center min-h-[2.5rem] pt-1.5">
                         {settings.contactInfo.phones.map((phone, idx) => (
                             <span key={idx} className="text-foreground/60 text-sm group-hover:text-foreground transition-colors">
                                 {phone}
@@ -320,10 +341,12 @@ const Footer: React.FC = () => {
               
               {settings.contactInfo.emails.length > 0 && (
                 <li className="flex items-start gap-4 group">
+                    {/* Tek Mail İkonu */}
                     <div className="w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center text-accent shrink-0 group-hover:border-accent/50 transition-colors">
                         <Mail size={20} />
                     </div>
-                    <div className="flex flex-col gap-1 justify-center min-h-[2.5rem]">
+                    {/* Liste Halinde Mailler */}
+                    <div className="flex flex-col gap-1 justify-center min-h-[2.5rem] pt-1.5">
                         {settings.contactInfo.emails.map((email, idx) => (
                             <span key={idx} className="text-foreground/60 text-sm group-hover:text-foreground transition-colors break-all">
                                 {email}
@@ -333,14 +356,21 @@ const Footer: React.FC = () => {
                 </li>
               )}
             </ul>
+            )}
           </div>
         </div>
 
         <div className="border-t border-foreground/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 relative">
           <div className="absolute top-[-1px] left-0 w-full h-px bg-gradient-to-r from-transparent via-foreground/30 to-transparent"></div>
-          <p className="text-foreground/50 text-sm text-center md:text-left">
-            {getCopyrightText(settings.copyrightText)}
-          </p>
+          
+          {isLoading ? (
+             <div className="h-3 w-64 bg-foreground/10 rounded animate-pulse"></div>
+          ) : (
+             <p className="text-foreground/50 text-sm text-center md:text-left">
+                {getCopyrightText(settings.copyrightText)}
+             </p>
+          )}
+          
           <div className="flex gap-6 text-sm text-foreground/50">
             <Link href="#" className="hover:text-foreground transition-colors">Gizlilik Politikası</Link>
             <Link href="#" className="hover:text-foreground transition-colors">Kullanım Şartları</Link>

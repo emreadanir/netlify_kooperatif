@@ -3,11 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db, appId } from '@/lib/firebase'; // ⭐️ Storage importları kaldırıldı
+import { auth, db, appId } from '@/lib/firebase'; 
 import { 
-  Save, Loader2, Layout, Menu, Plus, Trash2, // ⭐️ Trash2 buraya eklendi
+  Save, Loader2, Layout, Menu, Plus, Trash2,
   ArrowLeft, Image as ImageIcon, Type, 
-  Facebook, Instagram, Globe, Linkedin, Youtube
+  Facebook, Instagram, Globe, Linkedin, Youtube,
+  MapPin, Phone, Mail 
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -52,6 +53,13 @@ interface SocialLinkItem {
   url: string;
 }
 
+// ⭐️ YENİ: Footer İletişim Tipleri
+interface ContactInfoSettings {
+  address: string;
+  phones: string[];
+  emails: string[];
+}
+
 interface FooterSettings {
   description: string;
   copyrightText: string;
@@ -60,6 +68,7 @@ interface FooterSettings {
   quickLinks: SubMenuItem[];
   legislationLinksTitle: string;
   legislationLinks: SubMenuItem[];
+  contactInfo: ContactInfoSettings; // ⭐️ YENİ EKLENDİ
 }
 
 interface LayoutSettings {
@@ -122,7 +131,12 @@ const DEFAULT_SETTINGS: LayoutSettings = {
       { name: 'Esnaf ve Sanatkarlar Kanunu', href: '/kanun-ve-yonetmelikler' },
       { name: 'Kredi Yönetmeliği', href: '/kanun-ve-yonetmelikler' },
       { name: 'Bilgi Edinme Hakkı', href: '/kanun-ve-yonetmelikler' }
-    ]
+    ],
+    contactInfo: { // ⭐️ YENİ EKLENDİ
+      address: 'Adres bilgisi giriniz...',
+      phones: ['0 (224) ...'],
+      emails: ['bilgi@...']
+    }
   }
 };
 
@@ -144,10 +158,6 @@ export default function SiteGorunumuYonetimi() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [user, setUser] = useState<any>(null);
-
-  // ⭐️ KALDIRILDI: Yükleme durumu state'leri kaldırıldı (Dosya yükleme özelliği iptal edildi)
-  // const [uploadingLogo, setUploadingLogo] = useState(false);
-  // const [uploadingFavicon, setUploadingFavicon] = useState(false);
 
   // Auth
   useEffect(() => {
@@ -173,7 +183,6 @@ export default function SiteGorunumuYonetimi() {
             navbar: { 
                 ...DEFAULT_SETTINGS.navbar, 
                 ...(data.navbar || {}),
-                // Favicon yoksa varsayılanı kullan
                 faviconUrl: data.navbar?.faviconUrl || DEFAULT_SETTINGS.navbar.faviconUrl
             },
             footer: { 
@@ -183,7 +192,11 @@ export default function SiteGorunumuYonetimi() {
                 legislationLinksTitle: data.footer?.legislationLinksTitle || DEFAULT_SETTINGS.footer.legislationLinksTitle,
                 socialLinks: Array.isArray(data.footer?.socialLinks) 
                     ? data.footer.socialLinks 
-                    : DEFAULT_SETTINGS.footer.socialLinks
+                    : DEFAULT_SETTINGS.footer.socialLinks,
+                contactInfo: {
+                    ...DEFAULT_SETTINGS.footer.contactInfo,
+                    ...(data.footer?.contactInfo || {})
+                }
             }
           };
           setSettings(mergedSettings);
@@ -214,8 +227,6 @@ export default function SiteGorunumuYonetimi() {
       setSaving(false);
     }
   };
-
-  // ⭐️ KALDIRILDI: Dosya yükleme fonksiyonu kaldırıldı
 
   // --- FOOTER HELPERS ---
   const addFooterLink = (type: 'quickLinks' | 'legislationLinks') => {
@@ -252,6 +263,38 @@ export default function SiteGorunumuYonetimi() {
     newLinks[index] = { ...newLinks[index], [field]: value };
     setSettings(prev => ({ ...prev, footer: { ...prev.footer, socialLinks: newLinks } }));
   };
+
+  // --- ⭐️ YENİ: İLETİŞİM BİLGİLERİ HELPERS ---
+  const addPhone = () => {
+    const newPhones = [...settings.footer.contactInfo.phones, ''];
+    setSettings(prev => ({ ...prev, footer: { ...prev.footer, contactInfo: { ...prev.footer.contactInfo, phones: newPhones } } }));
+  };
+  const removePhone = (index: number) => {
+    const newPhones = [...settings.footer.contactInfo.phones];
+    newPhones.splice(index, 1);
+    setSettings(prev => ({ ...prev, footer: { ...prev.footer, contactInfo: { ...prev.footer.contactInfo, phones: newPhones } } }));
+  };
+  const updatePhone = (index: number, value: string) => {
+    const newPhones = [...settings.footer.contactInfo.phones];
+    newPhones[index] = value;
+    setSettings(prev => ({ ...prev, footer: { ...prev.footer, contactInfo: { ...prev.footer.contactInfo, phones: newPhones } } }));
+  };
+
+  const addEmail = () => {
+    const newEmails = [...settings.footer.contactInfo.emails, ''];
+    setSettings(prev => ({ ...prev, footer: { ...prev.footer, contactInfo: { ...prev.footer.contactInfo, emails: newEmails } } }));
+  };
+  const removeEmail = (index: number) => {
+    const newEmails = [...settings.footer.contactInfo.emails];
+    newEmails.splice(index, 1);
+    setSettings(prev => ({ ...prev, footer: { ...prev.footer, contactInfo: { ...prev.footer.contactInfo, emails: newEmails } } }));
+  };
+  const updateEmail = (index: number, value: string) => {
+    const newEmails = [...settings.footer.contactInfo.emails];
+    newEmails[index] = value;
+    setSettings(prev => ({ ...prev, footer: { ...prev.footer, contactInfo: { ...prev.footer.contactInfo, emails: newEmails } } }));
+  };
+
 
   if (loading) {
     return (
@@ -308,7 +351,6 @@ export default function SiteGorunumuYonetimi() {
                     </h3>
                     <div className="grid gap-6 md:grid-cols-2">
                         
-                        {/* ⭐️ GÜNCELLENDİ: LOGO URL ALANI */}
                         <div>
                             <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Logo URL</label>
                             <div className="flex gap-3">
@@ -326,7 +368,6 @@ export default function SiteGorunumuYonetimi() {
                             <p className="text-[10px] text-slate-500 mt-2">Logonun yüklü olduğu tam URL adresi.</p>
                         </div>
                         
-                        {/* ⭐️ GÜNCELLENDİ: FAVICON URL ALANI */}
                         <div>
                             <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Favicon URL (Sekme İkonu)</label>
                             <div className="flex gap-3">
@@ -397,6 +438,72 @@ export default function SiteGorunumuYonetimi() {
                                 value={settings.footer.copyrightText}
                                 onChange={(e) => setSettings(prev => ({ ...prev, footer: { ...prev.footer, copyrightText: e.target.value } }))}
                             />
+                        </div>
+                    </div>
+                </div>
+
+                {/* ⭐️ YENİ BÖLÜM: İLETİŞİM BİLGİLERİ */}
+                <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6">
+                    <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                        <Phone size={20} className="text-amber-400" /> İletişim Bilgileri
+                    </h3>
+                    
+                    <div className="space-y-6">
+                        {/* Adres */}
+                        <div>
+                            <label className="block text-xs font-bold text-slate-400 uppercase mb-2 flex items-center gap-2">
+                                <MapPin size={14}/> Adres
+                            </label>
+                            <textarea 
+                                rows={2}
+                                className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:border-amber-500 outline-none resize-none"
+                                value={settings.footer.contactInfo.address}
+                                onChange={(e) => setSettings(prev => ({ ...prev, footer: { ...prev.footer, contactInfo: { ...prev.footer.contactInfo, address: e.target.value } } }))}
+                            ></textarea>
+                        </div>
+
+                        {/* Telefonlar */}
+                        <div>
+                            <div className="flex justify-between items-center mb-2">
+                                <label className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2"><Phone size={14}/> Telefon Numaraları</label>
+                                <button onClick={addPhone} className="text-[10px] bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded flex items-center gap-1"><Plus size={10} /> Ekle</button>
+                            </div>
+                            <div className="space-y-2">
+                                {settings.footer.contactInfo.phones.map((phone, idx) => (
+                                    <div key={idx} className="flex gap-2">
+                                        <input 
+                                            type="text" 
+                                            className="flex-1 bg-slate-900/50 border border-slate-600 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-amber-500 font-mono"
+                                            value={phone}
+                                            onChange={(e) => updatePhone(idx, e.target.value)}
+                                            placeholder="0 (224) ..."
+                                        />
+                                        <button onClick={() => removePhone(idx)} className="text-slate-500 hover:text-red-400"><Trash2 size={14} /></button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* E-Postalar */}
+                        <div>
+                            <div className="flex justify-between items-center mb-2">
+                                <label className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2"><Mail size={14}/> E-Posta Adresleri</label>
+                                <button onClick={addEmail} className="text-[10px] bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded flex items-center gap-1"><Plus size={10} /> Ekle</button>
+                            </div>
+                            <div className="space-y-2">
+                                {settings.footer.contactInfo.emails.map((email, idx) => (
+                                    <div key={idx} className="flex gap-2">
+                                        <input 
+                                            type="text" 
+                                            className="flex-1 bg-slate-900/50 border border-slate-600 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-amber-500"
+                                            value={email}
+                                            onChange={(e) => updateEmail(idx, e.target.value)}
+                                            placeholder="ornek@mail.com"
+                                        />
+                                        <button onClick={() => removeEmail(idx)} className="text-slate-500 hover:text-red-400"><Trash2 size={14} /></button>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>

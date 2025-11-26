@@ -36,8 +36,9 @@ export default function YonetimKuruluYonetimi() {
   // Form State'leri
   const [name, setName] = useState('');
   const [title, setTitle] = useState('Yönetim Kurulu Üyesi'); 
-  const [image, setImage] = useState(''); 
-  // ⭐️ DEĞİŞİKLİK: 'type' state'i kaldırıldı, çünkü artık otomatik belirleniyor.
+  const [image, setImage] = useState('');
+  // Cinsiyet State'i
+  const [gender, setGender] = useState<'male' | 'female'>('male');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Düzenleme ve Sürükleme State'leri
@@ -121,7 +122,7 @@ export default function YonetimKuruluYonetimi() {
     setName('');
     setTitle('Yönetim Kurulu Üyesi');
     setImage('');
-    // setType kaldırıldı
+    setGender('male');
     setEditingId(null);
   };
 
@@ -129,7 +130,7 @@ export default function YonetimKuruluYonetimi() {
     setName(item.name);
     setTitle(item.title);
     setImage(item.image);
-    // setType kaldırıldı
+    setGender('male'); // Varsayılan olarak erkek seçilir (eski kayıtlarda yoksa)
     setEditingId(item.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -140,17 +141,26 @@ export default function YonetimKuruluYonetimi() {
 
     setIsSubmitting(true);
     try {
-      // ⭐️ YENİ: Tipi otomatik belirleme mantığı
+      // Tipi otomatik belirleme mantığı
       const autoType = title === 'Yönetim Kurulu Başkanı' ? 'gold' : 'silver';
 
-      // Varsayılan avatar rengini de tipe göre ayarla
-      const defaultImage = `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}&backgroundColor=${autoType === 'gold' ? 'b6e3f4' : 'c0aede'}`;
+      // Fotoğraf boşsa cinsiyete göre sabit avatar ata
+      let finalImage = image;
+      if (!finalImage) {
+          if (gender === 'female') {
+              // Kadın için boş profil görseli
+              finalImage = 'https://cdn-icons-png.flaticon.com/512/3135/3135789.png'; 
+          } else {
+              // Erkek için boş profil görseli
+              finalImage = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
+          }
+      }
       
       const docData = {
         name,
         title,
-        image: image || defaultImage,
-        type: autoType, // ⭐️ Otomatik belirlenen tip kullanılıyor
+        image: finalImage,
+        type: autoType, 
         ...(editingId ? {} : { createdAt: serverTimestamp(), order: members.length + 1 })
       };
 
@@ -253,10 +263,38 @@ export default function YonetimKuruluYonetimi() {
                         <option value="Yönetim Kurulu Üyesi">Yönetim Kurulu Üyesi</option>
                     </select>
                 </div>
-                {/* Bilgi Notu */}
                 <p className="text-[10px] text-slate-500 mt-2 italic">
                   * "Yönetim Kurulu Başkanı" seçildiğinde kart tasarımı otomatik olarak "Altın (Başkan)" görünümüne geçer.
                 </p>
+              </div>
+
+              {/* Cinsiyet Seçimi */}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Cinsiyet (Varsayılan Fotoğraf İçin)</label>
+                <div className="flex gap-4">
+                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all flex-1 ${gender === 'male' ? 'bg-indigo-500/20 border-indigo-500 text-white' : 'bg-slate-900/50 border-slate-700 text-slate-400 hover:bg-slate-800'}`}>
+                        <input 
+                            type="radio" 
+                            name="gender" 
+                            value="male" 
+                            checked={gender === 'male'} 
+                            onChange={() => setGender('male')}
+                            className="hidden" 
+                        />
+                        <span className="text-sm font-medium">Erkek</span>
+                    </label>
+                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all flex-1 ${gender === 'female' ? 'bg-pink-500/20 border-pink-500 text-white' : 'bg-slate-900/50 border-slate-700 text-slate-400 hover:bg-slate-800'}`}>
+                        <input 
+                            type="radio" 
+                            name="gender" 
+                            value="female" 
+                            checked={gender === 'female'} 
+                            onChange={() => setGender('female')}
+                            className="hidden" 
+                        />
+                        <span className="text-sm font-medium">Kadın</span>
+                    </label>
+                </div>
               </div>
 
               <div>
@@ -268,10 +306,8 @@ export default function YonetimKuruluYonetimi() {
                   className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500 text-sm"
                   placeholder="https://..."
                 />
-                <p className="text-[10px] text-slate-500 mt-1">Boş bırakılırsa otomatik bir avatar atanır.</p>
+                <p className="text-[10px] text-slate-500 mt-1">Boş bırakılırsa yukarıda seçilen cinsiyete uygun varsayılan görsel kullanılır.</p>
               </div>
-
-              {/* Kart Tipi Seçimi KALDIRILDI - Otomatik belirleniyor */}
 
               <button 
                 type="submit" 
