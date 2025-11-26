@@ -5,12 +5,11 @@ import React from "react";
 import FaviconUpdater from "@/components/FaviconUpdater";
 import ThemeUpdater from "@/components/ThemeUpdater";
 
-// Firebase importları (Sunucu tarafında veri çekmek için)
+// Firebase importları
 import { db, appId } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
-// ⭐️ KRİTİK EKLEME: Sayfanın statik (cache) olarak değil, her istekte dinamik sunulmasını sağlar.
-// Netlify'da eski renklerin gelmesini (caching) engeller.
+// Sayfanın statik (cache) olarak değil, her istekte dinamik sunulmasını sağlar.
 export const dynamic = 'force-dynamic';
 
 const geistSans = Geist({
@@ -25,29 +24,51 @@ const geistMono = Geist_Mono({
   display: 'swap',
 });
 
-export const metadata: Metadata = {
-  title: "S. S. Nilüfer İlçesi Esnaf ve Sanatkarlar Kredi ve Kefalet Kooperatifi",
-  description: "Esnaf ve sanatkarlarımızın finansal ihtiyaçlarına yönelik çözümler sunan kredi kooperatifi resmi web sitesi.",
-  icons: {
-    icon: '/kooperatif_logo.webp', 
-  },
-};
+// --- VERİ ÇEKME FONKSİYONLARI ---
 
-// Sunucu tarafında tema verisini çeken fonksiyon
-async function getThemeData() {
+// Tema ve Layout ayarlarını sunucu tarafında çeken yardımcı fonksiyon
+async function getSiteSettings() {
   try {
-    // Not: Sunucu tarafında 'window' olmadığı için appId lib/firebase.ts içindeki
-    // varsayılan değere ('kooperatif-v1') düşecektir.
-    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'site_settings', 'theme');
-    const snapshot = await getDoc(docRef);
-    
-    if (snapshot.exists()) {
-      return snapshot.data();
-    }
+    // Paralel olarak hem tema hem de layout (favicon/başlık) verilerini çekiyoruz
+    const [themeSnap, layoutSnap] = await Promise.all([
+      getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'site_settings', 'theme')),
+      getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'site_settings', 'layout'))
+    ]);
+
+    return {
+      theme: themeSnap.exists() ? themeSnap.data() : null,
+      layout: layoutSnap.exists() ? layoutSnap.data() : null
+    };
   } catch (error) {
-    console.error("Sunucu tarafında tema çekilemedi:", error);
+    console.error("Sunucu tarafında site ayarları çekilemedi:", error);
+    return { theme: null, layout: null };
   }
-  return null;
+}
+
+// ⭐️ DİNAMİK METADATA (Favicon Sorununun Çözümü)
+// Bu fonksiyon sayfa oluşturulurken çalışır ve doğru favicon/başlığı HTML'e gömer.
+export async function generateMetadata(): Promise<Metadata> {
+  const { layout } = await getSiteSettings();
+
+  // Varsayılan değerler
+  const defaultTitle = "S. S. Nilüfer İlçesi Esnaf ve Sanatkarlar Kredi ve Kefalet Kooperatifi";
+  const defaultDesc = "Esnaf ve sanatkarlarımızın finansal ihtiyaçlarına yönelik çözümler sunan kredi kooperatifi resmi web sitesi.";
+  const defaultIcon = "/kooperatif_logo.webp"; 
+
+  // Veritabanından gelen veriler (varsa)
+  const dbTitle = layout?.navbar?.logoText ? `${layout.navbar.logoText} ${layout.navbar.logoSubText || ''}` : defaultTitle;
+  const dbDesc = layout?.footer?.description || defaultDesc;
+  const dbIcon = layout?.navbar?.faviconUrl || defaultIcon;
+
+  return {
+    title: dbTitle,
+    description: dbDesc,
+    icons: {
+      icon: dbIcon, // ⭐️ Tarayıcı ilk yüklemede bu ikonu görecek
+      shortcut: dbIcon,
+      apple: dbIcon,
+    },
+  };
 }
 
 interface RootLayoutProps {
@@ -58,10 +79,10 @@ interface RootLayoutProps {
 export default async function RootLayout({
   children,
 }: RootLayoutProps) {
-  // Veriyi sunucuda bekle ve çek
-  const theme = await getThemeData();
+  // Tema verisini (CSS değişkenleri için) alıyoruz
+  const { theme } = await getSiteSettings();
 
-  // Eğer tema varsa CSS değişkenlerini oluştur
+  // CSS değişkenlerini oluştur
   const serverThemeStyles = theme ? `
     :root {
       --primary: ${theme.primary};
@@ -75,7 +96,7 @@ export default async function RootLayout({
   return (
     <html lang="tr">
       <head>
-        {/* Sunucu tarafında oluşturulan stilleri en başa ekliyoruz */}
+        {/* Sunucu tarafında oluşturulan stilleri (Renkler) en başa ekliyoruz */}
         {serverThemeStyles && (
           <style dangerouslySetInnerHTML={{ __html: serverThemeStyles }} />
         )}
@@ -83,6 +104,7 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* İstemci tarafı güncellemeleri için bileşenler çalışmaya devam eder */}
         <FaviconUpdater />
         <ThemeUpdater />
         
