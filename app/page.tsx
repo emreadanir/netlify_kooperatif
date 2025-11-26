@@ -64,12 +64,42 @@ const Home: React.FC = () => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isLoadingAnnouncements, setIsLoadingAnnouncements] = useState(true);
   
-  // ⭐️ DÜZELTME: Sayfa verisi için loading state eklendi
   const [pageData, setPageData] = useState<HomePageData>(DEFAULT_HOME_DATA);
   const [isPageLoading, setIsPageLoading] = useState(true); 
   
   const [user, setUser] = useState<any>(null);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+
+  // --- SWIPE (KAYDIRMA) MANTIĞI ---
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const minSwipeDistance = 50; // Kaydırma olarak algılanması için gereken minimum mesafe (piksel)
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null); // Reset
+    setTouchStart(e.targetTouches[0].clientX);
+    setIsPaused(true); // Dokunurken otomatik akışı durdur
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    setIsPaused(false); // Dokunma bitince akışı tekrar başlat
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      handleNext();
+    } else if (isRightSwipe) {
+      handlePrev();
+    }
+  };
+  // -------------------------------
 
   // Firebase işlemleri
   useEffect(() => {
@@ -106,7 +136,6 @@ const Home: React.FC = () => {
                 }
             });
         }
-        // Veri geldiğinde loading'i kapat
         setIsPageLoading(false);
     }, () => setIsPageLoading(false));
 
@@ -132,7 +161,6 @@ const Home: React.FC = () => {
     <div className="min-h-screen bg-background font-sans text-foreground flex flex-col transition-colors duration-500">
       <Navbar />
 
-      {/* ⭐️ DÜZELTME: Ana içerik yüklenene kadar loading ekranı veya skeleton göster */}
       {isPageLoading ? (
          <div className="flex-grow flex items-center justify-center min-h-[600px]">
             <div className="flex flex-col items-center gap-4">
@@ -188,7 +216,14 @@ const Home: React.FC = () => {
             <div className="w-full lg:w-5/12 relative mt-10 lg:mt-0">
               <div className="absolute inset-0 bg-gradient-to-r from-secondary to-primary rounded-3xl blur-2xl opacity-20 animate-pulse"></div>
               
-              <div className="relative bg-background/60 backdrop-blur-xl border border-foreground/10 rounded-3xl shadow-2xl flex flex-col h-[500px] overflow-hidden group" onMouseEnter={() => setIsPaused(true)} onMouseLeave={() => setIsPaused(false)}>
+              <div 
+                className="relative bg-background/60 backdrop-blur-xl border border-foreground/10 rounded-3xl shadow-2xl flex flex-col h-[500px] overflow-hidden group select-none touch-pan-y" 
+                onMouseEnter={() => setIsPaused(true)} 
+                onMouseLeave={() => setIsPaused(false)}
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
+              >
                   
                   {/* Başlık */}
                   <div className="bg-background/80 p-6 border-b border-foreground/10 flex items-center justify-between z-20 absolute top-0 left-0 right-0 rounded-t-3xl backdrop-blur-md">
@@ -197,7 +232,7 @@ const Home: React.FC = () => {
                           <div>
                               <h3 className="font-bold text-lg text-foreground">Duyurular</h3>
                               <p className="text-xs text-foreground/60 flex items-center gap-1">
-                                {isLoadingAnnouncements ? 'Yükleniyor...' : isPaused ? 'Akış Duraklatıldı' : 'Otomatik Akış'} 
+                                {isLoadingAnnouncements ? 'Yükleniyor...' : isPaused ? 'Durduruldu' : 'Otomatik Akış'} 
                                 {!isLoadingAnnouncements && <span className={`w-1.5 h-1.5 rounded-full ${isPaused ? 'bg-red-500' : 'bg-green-500 animate-pulse'}`}></span>}
                               </p>
                           </div>

@@ -89,18 +89,18 @@ export default function RenkYonetimi() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f172a] font-sans text-gray-100 p-6 md:p-12">
+    <div className="min-h-screen bg-[#0f172a] font-sans text-gray-100 p-4 md:p-12">
       
       {/* Header */}
-      <div className="max-w-4xl mx-auto mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="max-w-4xl mx-auto mb-6 md:mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-            <Palette className="text-pink-500" />
+          <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+            <Palette className="text-pink-500 w-6 h-6 md:w-8 md:h-8" />
             Renk Ayarları
           </h1>
-          <p className="text-slate-400 text-sm mt-1">Sitenin genel renk temasını buradan özelleştirebilirsiniz.</p>
+          <p className="text-slate-400 text-xs md:text-sm mt-1">Sitenin genel renk temasını buradan özelleştirebilirsiniz.</p>
         </div>
-        <Link href="/admin" className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium border border-slate-700 shrink-0">
+        <Link href="/admin" className="w-full md:w-auto px-4 py-3 md:py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm font-medium border border-slate-700 shrink-0">
             <ArrowLeft size={16} />
             Panele Dön
         </Link>
@@ -108,12 +108,12 @@ export default function RenkYonetimi() {
 
       <div className="max-w-4xl mx-auto">
         
-        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-8 shadow-xl">
+        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4 md:p-8 shadow-xl">
             
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 
                 {/* Sol: Renk Seçiciler */}
-                <div className="space-y-6">
+                <div className="space-y-6 order-2 lg:order-1">
                     
                     <div>
                         <label className="block text-sm font-medium text-slate-300 mb-2">Ana Renk (Primary)</label>
@@ -122,7 +122,7 @@ export default function RenkYonetimi() {
                                 type="color" 
                                 value={theme.primary} 
                                 onChange={(e) => updateColor('primary', e.target.value)}
-                                className="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0"
+                                className="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0 shrink-0"
                             />
                             <input 
                                 type="text" 
@@ -141,7 +141,7 @@ export default function RenkYonetimi() {
                                 type="color" 
                                 value={theme.secondary} 
                                 onChange={(e) => updateColor('secondary', e.target.value)}
-                                className="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0"
+                                className="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0 shrink-0"
                             />
                             <input 
                                 type="text" 
@@ -160,7 +160,7 @@ export default function RenkYonetimi() {
                                 type="color" 
                                 value={theme.accent} 
                                 onChange={(e) => updateColor('accent', e.target.value)}
-                                className="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0"
+                                className="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0 shrink-0"
                             />
                             <input 
                                 type="text" 
@@ -180,7 +180,7 @@ export default function RenkYonetimi() {
                                     type="color" 
                                     value={theme.background} 
                                     onChange={(e) => updateColor('background', e.target.value)}
-                                    className="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0"
+                                    className="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0 shrink-0"
                                 />
                                 <input 
                                     type="text" 
@@ -191,7 +191,6 @@ export default function RenkYonetimi() {
                             </div>
                         </div>
 
-                        {/* ⭐️ YENİ EKLENEN ALAN: Yazı Rengi */}
                         <div>
                             <label className="block text-sm font-medium text-slate-300 mb-2">Yazı Rengi (Metinler)</label>
                             <div className="flex items-center gap-3 bg-slate-900/50 p-2 rounded-xl border border-slate-700">
@@ -199,7 +198,7 @@ export default function RenkYonetimi() {
                                     type="color" 
                                     value={theme.foreground} 
                                     onChange={(e) => updateColor('foreground', e.target.value)}
-                                    className="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0"
+                                    className="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0 shrink-0"
                                 />
                                 <input 
                                     type="text" 
@@ -215,28 +214,28 @@ export default function RenkYonetimi() {
                 </div>
 
                 {/* Sağ: Önizleme */}
-                <div className="bg-slate-900/50 rounded-2xl p-6 border border-slate-700 flex flex-col gap-6" style={{ backgroundColor: theme.background }}>
+                <div className="bg-slate-900/50 rounded-2xl p-4 md:p-6 border border-slate-700 flex flex-col gap-6 order-1 lg:order-2" style={{ backgroundColor: theme.background }}>
                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Canlı Önizleme</h3>
                     
                     {/* Kart Örneği */}
-                    <div className="rounded-2xl border p-6 relative overflow-hidden" style={{ borderColor: `${theme.primary}40`, backgroundColor: `${theme.primary}10` }}>
+                    <div className="rounded-2xl border p-4 md:p-6 relative overflow-hidden" style={{ borderColor: `${theme.primary}40`, backgroundColor: `${theme.primary}10` }}>
                         <div className="absolute top-0 left-0 w-1 h-full" style={{ backgroundColor: theme.primary }}></div>
-                        <h4 className="text-xl font-bold mb-2" style={{ color: theme.foreground }}>Örnek Başlık</h4>
-                        <p className="text-sm opacity-80 mb-4" style={{ color: theme.foreground }}>
+                        <h4 className="text-lg md:text-xl font-bold mb-2" style={{ color: theme.foreground }}>Örnek Başlık</h4>
+                        <p className="text-sm opacity-80 mb-4 leading-relaxed" style={{ color: theme.foreground }}>
                             Bu alan seçtiğiniz renklerin sitede nasıl görüneceğini simüle eder. Metin rengini değiştirdiğinizde burası da güncellenecektir.
                         </p>
-                        <div className="flex gap-3">
-                            <button className="px-4 py-2 rounded-lg text-sm font-bold text-white" style={{ backgroundColor: theme.primary }}>
+                        <div className="flex flex-wrap gap-3">
+                            <button className="px-4 py-2 rounded-lg text-sm font-bold text-white shadow-lg" style={{ backgroundColor: theme.primary }}>
                                 Birinci Buton
                             </button>
-                            <button className="px-4 py-2 rounded-lg text-sm font-bold text-white" style={{ backgroundColor: theme.secondary }}>
+                            <button className="px-4 py-2 rounded-lg text-sm font-bold text-white shadow-lg" style={{ backgroundColor: theme.secondary }}>
                                 İkinci Buton
                             </button>
                         </div>
                     </div>
 
                     {/* Rozetler */}
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <span className="px-3 py-1 rounded-full text-xs font-bold border" style={{ borderColor: `${theme.accent}40`, backgroundColor: `${theme.accent}20`, color: theme.accent }}>
                             Vurgu Rozeti
                         </span>
@@ -248,10 +247,10 @@ export default function RenkYonetimi() {
                 </div>
             </div>
 
-            <div className="flex items-center justify-between mt-10 pt-6 border-t border-slate-700">
+            <div className="flex flex-col-reverse md:flex-row items-center justify-between mt-10 pt-6 border-t border-slate-700 gap-4">
                 <button 
                     onClick={resetToDefault}
-                    className="flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-white transition-colors px-4 py-2 rounded-lg hover:bg-slate-700"
+                    className="w-full md:w-auto flex items-center justify-center gap-2 text-sm font-medium text-slate-400 hover:text-white transition-colors px-4 py-3 rounded-lg hover:bg-slate-700"
                 >
                     <RotateCcw size={16} /> Varsayılana Dön
                 </button>
@@ -259,7 +258,7 @@ export default function RenkYonetimi() {
                 <button 
                     onClick={handleSave}
                     disabled={saving}
-                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-indigo-900/30 transition-all transform hover:scale-105 flex items-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="w-full md:w-auto bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-indigo-900/30 transition-all transform hover:scale-105 flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                     {saving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
                     {saving ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}

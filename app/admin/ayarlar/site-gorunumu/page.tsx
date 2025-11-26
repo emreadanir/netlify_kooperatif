@@ -53,7 +53,7 @@ interface SocialLinkItem {
   url: string;
 }
 
-// ⭐️ YENİ: Footer İletişim Tipleri
+// Footer İletişim Tipleri
 interface ContactInfoSettings {
   address: string;
   phones: string[];
@@ -68,7 +68,7 @@ interface FooterSettings {
   quickLinks: SubMenuItem[];
   legislationLinksTitle: string;
   legislationLinks: SubMenuItem[];
-  contactInfo: ContactInfoSettings; // ⭐️ YENİ EKLENDİ
+  contactInfo: ContactInfoSettings; 
 }
 
 interface LayoutSettings {
@@ -132,7 +132,7 @@ const DEFAULT_SETTINGS: LayoutSettings = {
       { name: 'Kredi Yönetmeliği', href: '/kanun-ve-yonetmelikler' },
       { name: 'Bilgi Edinme Hakkı', href: '/kanun-ve-yonetmelikler' }
     ],
-    contactInfo: { // ⭐️ YENİ EKLENDİ
+    contactInfo: { 
       address: 'Adres bilgisi giriniz...',
       phones: ['0 (224) ...'],
       emails: ['bilgi@...']
@@ -264,7 +264,7 @@ export default function SiteGorunumuYonetimi() {
     setSettings(prev => ({ ...prev, footer: { ...prev.footer, socialLinks: newLinks } }));
   };
 
-  // --- ⭐️ YENİ: İLETİŞİM BİLGİLERİ HELPERS ---
+  // --- İLETİŞİM BİLGİLERİ HELPERS ---
   const addPhone = () => {
     const newPhones = [...settings.footer.contactInfo.phones, ''];
     setSettings(prev => ({ ...prev, footer: { ...prev.footer, contactInfo: { ...prev.footer.contactInfo, phones: newPhones } } }));
@@ -305,18 +305,18 @@ export default function SiteGorunumuYonetimi() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f172a] font-sans text-gray-100 p-6 md:p-12">
+    <div className="min-h-screen bg-[#0f172a] font-sans text-gray-100 p-4 md:p-12">
       
       {/* Header */}
-      <div className="max-w-6xl mx-auto mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="max-w-6xl mx-auto mb-6 md:mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
             <Layout className="text-indigo-500" />
             Site Görünümü
           </h1>
-          <p className="text-slate-400 text-sm mt-1">Menü yapısını, logoyu ve alt bilgi alanlarını buradan özelleştirebilirsiniz.</p>
+          <p className="text-slate-400 text-xs md:text-sm mt-1">Menü yapısını, logoyu ve alt bilgi alanlarını buradan özelleştirebilirsiniz.</p>
         </div>
-        <Link href="/admin" className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium border border-slate-700 shrink-0">
+        <Link href="/admin" className="w-full md:w-auto px-4 py-3 md:py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm font-medium border border-slate-700 shrink-0">
             <ArrowLeft size={16} />
             Panele Dön
         </Link>
@@ -325,16 +325,16 @@ export default function SiteGorunumuYonetimi() {
       <div className="max-w-6xl mx-auto">
         
         {/* Tabs */}
-        <div className="flex gap-4 mb-8 border-b border-slate-700">
+        <div className="flex gap-2 mb-8 border-b border-slate-700 overflow-x-auto pb-1">
             <button 
                 onClick={() => setActiveTab('navbar')}
-                className={`px-6 py-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${activeTab === 'navbar' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-white'}`}
+                className={`px-4 md:px-6 py-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${activeTab === 'navbar' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-white'}`}
             >
                 <Menu size={18} /> Üst Menü (Navbar)
             </button>
             <button 
                 onClick={() => setActiveTab('footer')}
-                className={`px-6 py-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${activeTab === 'footer' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-white'}`}
+                className={`px-4 md:px-6 py-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${activeTab === 'footer' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-white'}`}
             >
                 <Layout size={18} /> Alt Bilgi (Footer)
             </button>
@@ -345,7 +345,7 @@ export default function SiteGorunumuYonetimi() {
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
                 
                 {/* Logo ve Kimlik Ayarları */}
-                <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6">
+                <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4 md:p-6">
                     <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
                         <ImageIcon size={20} className="text-amber-400" /> Site Kimliği
                     </h3>
@@ -359,7 +359,7 @@ export default function SiteGorunumuYonetimi() {
                                 </div>
                                 <input 
                                     type="text" 
-                                    className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-3 text-white text-sm focus:border-indigo-500 outline-none"
+                                    className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-3 text-white text-sm focus:border-indigo-500 outline-none w-full"
                                     value={settings.navbar.logoUrl}
                                     onChange={(e) => setSettings(prev => ({ ...prev, navbar: { ...prev.navbar, logoUrl: e.target.value } }))}
                                     placeholder="https://..."
@@ -376,7 +376,7 @@ export default function SiteGorunumuYonetimi() {
                                 </div>
                                 <input 
                                     type="text" 
-                                    className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-3 text-white text-sm focus:border-indigo-500 outline-none"
+                                    className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-3 text-white text-sm focus:border-indigo-500 outline-none w-full"
                                     value={settings.navbar.faviconUrl}
                                     onChange={(e) => setSettings(prev => ({ ...prev, navbar: { ...prev.navbar, faviconUrl: e.target.value } }))}
                                     placeholder="/favicon.ico"
@@ -416,7 +416,7 @@ export default function SiteGorunumuYonetimi() {
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
                 
                 {/* Genel Bilgiler */}
-                <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6">
+                <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4 md:p-6">
                     <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
                         <Type size={20} className="text-emerald-400" /> Genel Metinler
                     </h3>
@@ -442,8 +442,8 @@ export default function SiteGorunumuYonetimi() {
                     </div>
                 </div>
 
-                {/* ⭐️ YENİ BÖLÜM: İLETİŞİM BİLGİLERİ */}
-                <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6">
+                {/* İLETİŞİM BİLGİLERİ */}
+                <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4 md:p-6">
                     <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
                         <Phone size={20} className="text-amber-400" /> İletişim Bilgileri
                     </h3>
@@ -473,12 +473,12 @@ export default function SiteGorunumuYonetimi() {
                                     <div key={idx} className="flex gap-2">
                                         <input 
                                             type="text" 
-                                            className="flex-1 bg-slate-900/50 border border-slate-600 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-amber-500 font-mono"
+                                            className="flex-1 bg-slate-900/50 border border-slate-600 rounded px-2 py-2 text-sm text-white outline-none focus:border-amber-500 font-mono w-full"
                                             value={phone}
                                             onChange={(e) => updatePhone(idx, e.target.value)}
                                             placeholder="0 (224) ..."
                                         />
-                                        <button onClick={() => removePhone(idx)} className="text-slate-500 hover:text-red-400"><Trash2 size={14} /></button>
+                                        <button onClick={() => removePhone(idx)} className="text-slate-500 hover:text-red-400 p-2"><Trash2 size={16} /></button>
                                     </div>
                                 ))}
                             </div>
@@ -495,12 +495,12 @@ export default function SiteGorunumuYonetimi() {
                                     <div key={idx} className="flex gap-2">
                                         <input 
                                             type="text" 
-                                            className="flex-1 bg-slate-900/50 border border-slate-600 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-amber-500"
+                                            className="flex-1 bg-slate-900/50 border border-slate-600 rounded px-2 py-2 text-sm text-white outline-none focus:border-amber-500 w-full"
                                             value={email}
                                             onChange={(e) => updateEmail(idx, e.target.value)}
                                             placeholder="ornek@mail.com"
                                         />
-                                        <button onClick={() => removeEmail(idx)} className="text-slate-500 hover:text-red-400"><Trash2 size={14} /></button>
+                                        <button onClick={() => removeEmail(idx)} className="text-slate-500 hover:text-red-400 p-2"><Trash2 size={16} /></button>
                                     </div>
                                 ))}
                             </div>
@@ -511,9 +511,9 @@ export default function SiteGorunumuYonetimi() {
                 {/* Link Grupları */}
                 <div className="grid md:grid-cols-2 gap-6">
                     {/* Hızlı Erişim */}
-                    <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6">
-                        <div className="flex justify-between items-center mb-4">
-                            <div className="flex-1 mr-4">
+                    <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4 md:p-6">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+                            <div className="flex-1 mr-0 sm:mr-4">
                                 <label className="block text-[10px] text-slate-500 uppercase font-bold mb-1">Başlık</label>
                                 <input 
                                     type="text"
@@ -522,33 +522,37 @@ export default function SiteGorunumuYonetimi() {
                                     onChange={(e) => setSettings(prev => ({ ...prev, footer: { ...prev.footer, quickLinksTitle: e.target.value } }))}
                                 />
                             </div>
-                            <button onClick={() => addFooterLink('quickLinks')} className="text-xs bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded flex items-center gap-1"><Plus size={12} /> Link Ekle</button>
+                            <button onClick={() => addFooterLink('quickLinks')} className="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded flex items-center gap-1 w-fit"><Plus size={12} /> Link Ekle</button>
                         </div>
                         <div className="space-y-2">
                             {settings.footer.quickLinks.map((link, idx) => (
-                                <div key={idx} className="flex gap-2">
+                                <div key={idx} className="flex flex-col sm:flex-row gap-2 p-2 bg-slate-900/30 rounded-lg border border-slate-700/30">
                                     <input 
                                         type="text" 
                                         className="flex-1 bg-slate-900/50 border border-slate-600 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-emerald-500"
                                         value={link.name}
+                                        placeholder="Link Adı"
                                         onChange={(e) => updateFooterLink('quickLinks', idx, 'name', e.target.value)}
                                     />
-                                    <input 
-                                        type="text" 
-                                        className="flex-1 bg-slate-900/50 border border-slate-600 rounded px-2 py-1.5 text-xs text-slate-400 outline-none focus:border-emerald-500 font-mono"
-                                        value={link.href}
-                                        onChange={(e) => updateFooterLink('quickLinks', idx, 'href', e.target.value)}
-                                    />
-                                    <button onClick={() => removeFooterLink('quickLinks', idx)} className="text-slate-500 hover:text-red-400"><Trash2 size={14} /></button>
+                                    <div className="flex gap-2">
+                                        <input 
+                                            type="text" 
+                                            className="flex-1 bg-slate-900/50 border border-slate-600 rounded px-2 py-1.5 text-xs text-slate-400 outline-none focus:border-emerald-500 font-mono"
+                                            value={link.href}
+                                            placeholder="URL"
+                                            onChange={(e) => updateFooterLink('quickLinks', idx, 'href', e.target.value)}
+                                        />
+                                        <button onClick={() => removeFooterLink('quickLinks', idx)} className="text-slate-500 hover:text-red-400 px-2"><Trash2 size={14} /></button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
                     {/* Mevzuat */}
-                    <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6">
-                        <div className="flex justify-between items-center mb-4">
-                            <div className="flex-1 mr-4">
+                    <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4 md:p-6">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+                            <div className="flex-1 mr-0 sm:mr-4">
                                 <label className="block text-[10px] text-slate-500 uppercase font-bold mb-1">Başlık</label>
                                 <input 
                                     type="text"
@@ -557,24 +561,28 @@ export default function SiteGorunumuYonetimi() {
                                     onChange={(e) => setSettings(prev => ({ ...prev, footer: { ...prev.footer, legislationLinksTitle: e.target.value } }))}
                                 />
                             </div>
-                            <button onClick={() => addFooterLink('legislationLinks')} className="text-xs bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded flex items-center gap-1"><Plus size={12} /> Link Ekle</button>
+                            <button onClick={() => addFooterLink('legislationLinks')} className="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded flex items-center gap-1 w-fit"><Plus size={12} /> Link Ekle</button>
                         </div>
                         <div className="space-y-2">
                             {settings.footer.legislationLinks.map((link, idx) => (
-                                <div key={idx} className="flex gap-2">
+                                <div key={idx} className="flex flex-col sm:flex-row gap-2 p-2 bg-slate-900/30 rounded-lg border border-slate-700/30">
                                     <input 
                                         type="text" 
                                         className="flex-1 bg-slate-900/50 border border-slate-600 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-emerald-500"
                                         value={link.name}
+                                        placeholder="Link Adı"
                                         onChange={(e) => updateFooterLink('legislationLinks', idx, 'name', e.target.value)}
                                     />
-                                    <input 
-                                        type="text" 
-                                        className="flex-1 bg-slate-900/50 border border-slate-600 rounded px-2 py-1.5 text-xs text-slate-400 outline-none focus:border-emerald-500 font-mono"
-                                        value={link.href}
-                                        onChange={(e) => updateFooterLink('legislationLinks', idx, 'href', e.target.value)}
-                                    />
-                                    <button onClick={() => removeFooterLink('legislationLinks', idx)} className="text-slate-500 hover:text-red-400"><Trash2 size={14} /></button>
+                                    <div className="flex gap-2">
+                                        <input 
+                                            type="text" 
+                                            className="flex-1 bg-slate-900/50 border border-slate-600 rounded px-2 py-1.5 text-xs text-slate-400 outline-none focus:border-emerald-500 font-mono"
+                                            value={link.href}
+                                            placeholder="URL"
+                                            onChange={(e) => updateFooterLink('legislationLinks', idx, 'href', e.target.value)}
+                                        />
+                                        <button onClick={() => removeFooterLink('legislationLinks', idx)} className="text-slate-500 hover:text-red-400 px-2"><Trash2 size={14} /></button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -582,23 +590,32 @@ export default function SiteGorunumuYonetimi() {
                 </div>
 
                 {/* Sosyal Medya */}
-                <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6">
+                <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4 md:p-6">
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-lg font-bold text-white flex items-center gap-2">
                             <Globe size={20} className="text-pink-400" /> Sosyal Medya Hesapları
                         </h3>
                         <button onClick={addSocialLink} className="text-xs bg-pink-600 hover:bg-pink-500 text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
-                            <Plus size={14} /> Yeni Hesap Ekle
+                            <Plus size={14} /> Yeni Hesap
                         </button>
                     </div>
                     <div className="space-y-3">
                         {settings.footer.socialLinks.map((link, index) => (
-                            <div key={index} className="flex gap-3 items-center bg-slate-900/50 p-2 rounded-xl border border-slate-700">
-                                <div className="bg-slate-800 p-2 rounded-lg border border-slate-600">
-                                    {getSocialIcon(link.platform)}
+                            <div key={index} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                <div className="flex items-center gap-3 w-full sm:w-auto">
+                                    <div className="bg-slate-800 p-2 rounded-lg border border-slate-600 shrink-0">
+                                        {getSocialIcon(link.platform)}
+                                    </div>
+                                    <div className="flex-1 sm:hidden">
+                                        <span className="text-sm font-bold text-white capitalize">{link.platform}</span>
+                                    </div>
+                                    <button onClick={() => removeSocialLink(index)} className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors sm:hidden">
+                                        <Trash2 size={16} />
+                                    </button>
                                 </div>
-                                <div className="flex-1 grid grid-cols-3 gap-3">
-                                    <div className="col-span-1">
+                                
+                                <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+                                    <div className="col-span-1 hidden sm:block">
                                         <select 
                                             className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white text-xs focus:border-pink-500 outline-none appearance-none"
                                             value={link.platform}
@@ -612,7 +629,7 @@ export default function SiteGorunumuYonetimi() {
                                             <option value="website">Web Sitesi</option>
                                         </select>
                                     </div>
-                                    <div className="col-span-2">
+                                    <div className="col-span-1 sm:col-span-2">
                                         <input 
                                             type="text" 
                                             className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white text-xs focus:border-pink-500 outline-none"
@@ -622,7 +639,7 @@ export default function SiteGorunumuYonetimi() {
                                         />
                                     </div>
                                 </div>
-                                <button onClick={() => removeSocialLink(index)} className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
+                                <button onClick={() => removeSocialLink(index)} className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors hidden sm:block">
                                     <Trash2 size={16} />
                                 </button>
                             </div>
@@ -637,11 +654,12 @@ export default function SiteGorunumuYonetimi() {
         )}
 
         {/* KAYDET BUTONU */}
-        <div className="sticky bottom-6 flex justify-end mt-8 z-20">
+        <div className="sticky bottom-6 flex justify-end mt-8 z-30">
+            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md -z-10 rounded-2xl transform scale-110"></div>
             <button 
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-indigo-900/30 transition-all transform hover:scale-105 flex items-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-indigo-900/30 transition-all transform hover:scale-105 flex items-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed w-full md:w-auto justify-center"
             >
                 {saving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
                 {saving ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
